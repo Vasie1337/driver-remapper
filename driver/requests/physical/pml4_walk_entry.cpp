@@ -32,7 +32,7 @@ namespace pml4
 			bool hard_coded;
 		};
 		
-		MmPfnDatabaseSearchPattern patterns;
+		MmPfnDatabaseSearchPattern patterns{};
 		
 		// Windows 10 x64 Build 14332+
 		static const UCHAR kPatternWin10x64[] = {

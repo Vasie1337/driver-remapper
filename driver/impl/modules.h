@@ -95,7 +95,7 @@ namespace modules
     void* get_system_information(SYSTEM_INFORMATION_CLASS information_class)
     {
         unsigned long size = 32;
-        char buffer[32];
+        char buffer[32]{};
 
         imports::zw_query_system_information(information_class, buffer, size, &size);
 

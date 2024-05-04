@@ -170,8 +170,8 @@
     <ClInclude Include="dependencies\driver\driver.h" />
     <ClInclude Include="dependencies\driver\interface.h" />
     <ClInclude Include="dependencies\includes.hpp" />
+    <ClInclude Include="dependencies\math.h" />
     <ClInclude Include="dependencies\xor.hpp" />
-    <ClInclude Include="math.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="dependencies\driver\asm\assert.asm">

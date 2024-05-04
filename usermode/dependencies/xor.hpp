@@ -493,7 +493,7 @@ namespace li {
             template<class T = void*, class Enum = unsafe_module_enumerator>
             LAZY_IMPORTER_FORCEINLINE static T get( ) noexcept
             {
-                Enum e;
+                Enum e = { 0 };
                 do {
                     if ( hash( e.value->BaseDllName ) == Hash )
                         return ( T ) (e.value->DllBase);
@@ -547,7 +547,7 @@ namespace li {
                 return forwarded<F, Enum>( );
 #else
 
-                Enum e;
+                Enum e = { 0 };
 
                 do {
 #ifdef LAZY_IMPORTER_HARDENED_MODULE_CHECKS
@@ -575,7 +575,7 @@ namespace li {
                 hash_t::value_type            module_hash = 0;
                 auto                          function_hash = Hash;
 
-                Enum e;
+                Enum e = { 0 };
                 do {
                     name = e.value->BaseDllName;
                     name.Length -= 8; // get rid of .dll extension
@@ -898,7 +898,7 @@ namespace jm
         // loop generates vectorized code which places constants in data dir
         XORSTR_FORCEINLINE constexpr void _copy( ) noexcept
         {
-            constexpr detail::string_storage<T, Keys::key...> storage;
+            constexpr detail::string_storage<T, Keys::key...> storage{};
             static_cast< void >(std::initializer_list<std::uint64_t>{
                 (const_cast< XORSTR_VOLATILE std::uint64_t* >(_storage)) [ Keys::idx ] =
                     storage.storage [ Keys::idx ]... });
@@ -921,7 +921,7 @@ namespace jm
 
         XORSTR_FORCEINLINE void crypt( ) noexcept
         {
-            alignas(T::buffer_align) std::uint64_t keys [ T::buffer_size ];
+            alignas(T::buffer_align) std::uint64_t keys[T::buffer_size]{ 0 };
             static_cast< void >(std::initializer_list<std::uint64_t>{
                 (const_cast< XORSTR_VOLATILE std::uint64_t* >(keys)) [ Keys::idx ] =
                     Keys::key... });

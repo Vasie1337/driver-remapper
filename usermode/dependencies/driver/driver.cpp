@@ -3,7 +3,7 @@
 
 int m_ue::interface_t::get_process_id(std::string proc_name)
 {
-	PROCESSENTRY32 entry;
+	PROCESSENTRY32 entry = { 0 };
 	entry.dwSize = sizeof(PROCESSENTRY32);
 
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);

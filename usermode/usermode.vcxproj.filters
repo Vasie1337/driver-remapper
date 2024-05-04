@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="source.cpp" />
+    <ClCompile Include="dependencies\driver\driver.cpp">
+      <Filter>driver</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dependencies\includes.hpp" />
+    <ClInclude Include="dependencies\driver\driver.h">
+      <Filter>driver</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\xor.hpp">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\driver\interface.h">
+      <Filter>driver</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\math.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="driver">
+      <UniqueIdentifier>{3575f5c5-e9ee-49c3-935f-d378c06e542a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{7fed0410-dee0-4520-9b72-84ec2c922d36}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="dependencies\driver\asm\assert.asm">
+      <Filter>driver</Filter>
+    </MASM>
+  </ItemGroup>
+</Project>
