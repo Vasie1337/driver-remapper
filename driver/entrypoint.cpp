@@ -28,7 +28,7 @@ std::uintptr_t m_new_entry = 0;
 #define DEVICE_NAME L"\\Device\\{3DC31255-A121-4FEA-B9F4-DD7367D106FF}"
 #define DOS_NAME L"\\DosDevices\\{3DC31255-A121-4FEA-B9F4-DD7367D106FF}"
 
-#define TARGET_DRIVER_PATH L"\\??\\C:\\Users\\Vasie\\Desktop\\IndirectKmd.sys"
+#define TARGET_DRIVER_PATH L"\\??\\C:\\Windows\\System32\\drivers\\SleepStudyHelper.sys"
 
 namespace ioctl
 {
@@ -181,7 +181,7 @@ NTSTATUS signed_cave_entry(PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_p
 
 NTSTATUS hook()
 {
-	const auto system_service = modules::get_kernel_module(skCrypt("IndirectKmd.sys"));
+	const auto system_service = modules::get_kernel_module(skCrypt("SleepStudyHelper.sys"));
 
 	if (!system_service)
 	{

@@ -151,7 +151,7 @@ namespace modules
         {
             const auto& mod = info->Modules[i];
 
-            //printf( "%s\n", mod.FullPathName + mod.OffsetToFileName );
+            printf( "%s\n", mod.FullPathName + mod.OffsetToFileName );
 
             if (crt::strcmp(to_lower_c((char*)mod.FullPathName + mod.OffsetToFileName), name) == 0)
             {

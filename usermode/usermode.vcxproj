@@ -73,7 +73,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>usermode</TargetName>
-    <OutDir>$(SolutionDir)bootstrap</OutDir>
+    <OutDir>$(SolutionDir)bootstrap\</OutDir>
     <IntDir>..\bootstrap\usermode\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
