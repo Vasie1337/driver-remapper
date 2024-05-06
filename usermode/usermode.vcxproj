@@ -163,15 +163,32 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_demo.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_tables.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\driver\driver.cpp" />
+    <ClCompile Include="overlay.cpp" />
     <ClCompile Include="source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imconfig.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imgui.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imgui_internal.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imstb_rectpack.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imstb_textedit.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imstb_truetype.h" />
     <ClInclude Include="dependencies\driver\driver.h" />
     <ClInclude Include="dependencies\driver\interface.h" />
     <ClInclude Include="dependencies\includes.hpp" />
     <ClInclude Include="dependencies\math.h" />
     <ClInclude Include="dependencies\xor.hpp" />
+    <ClInclude Include="overlay.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="dependencies\driver\asm\assert.asm">

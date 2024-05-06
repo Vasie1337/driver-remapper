@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-//#define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
+#define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
 
 #ifdef PRINT_DEBUG
 #define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[kernel-device]: " text), ##__VA_ARGS__)

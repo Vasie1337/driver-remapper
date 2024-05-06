@@ -5,6 +5,14 @@
     <ClCompile Include="dependencies\driver\driver.cpp">
       <Filter>driver</Filter>
     </ClCompile>
+    <ClCompile Include="overlay.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_demo.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_tables.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\includes.hpp" />
@@ -18,6 +26,15 @@
       <Filter>driver</Filter>
     </ClInclude>
     <ClInclude Include="dependencies\math.h" />
+    <ClInclude Include="overlay.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imstb_truetype.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imconfig.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imgui.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imgui_internal.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imstb_rectpack.h" />
+    <ClInclude Include="dependencies\Dear ImGui\imstb_textedit.h" />
+    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="driver">
