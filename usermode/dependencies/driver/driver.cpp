@@ -103,3 +103,21 @@ bool m_ue::interface_t::read( const std::uintptr_t address, void* buffer, const 
 
 	return send_cmd( &data, invoke_read );
 }
+
+bool m_ue::interface_t::dump_memory(uint64_t address, size_t len)
+{
+	for (int i = 0; i < len; i+=sizeof(float))
+	{
+		float buffer;
+		read(address + i, &buffer, sizeof(float));
+
+		if (std::abs(buffer) < std::numeric_limits<float>::epsilon() || buffer > 100000)
+			continue;
+
+		printf("offset: 0x%p, value %f\n", i, buffer);
+	}
+	Sleep(5);
+	system("cls");
+
+	return false;
+}

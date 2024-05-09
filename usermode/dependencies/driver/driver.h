@@ -105,6 +105,8 @@ namespace m_ue
 		{
 			return this->read(address, (uint8_t*)out, sizeof(T) * len) == 0;
 		}
+
+		bool dump_memory(uint64_t address, size_t len);
 	};
 }
 

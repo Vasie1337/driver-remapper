@@ -5,10 +5,10 @@ class Vector2
 {
 public:
 	Vector2();
-	Vector2(float _x, float _y);
+	Vector2(double _x, double _y);
 	~Vector2();
 
-	float x, y;
+	double x, y;
 
 	Vector2 operator *(Vector2 a);
 	Vector2 operator /(Vector2 a);
@@ -21,22 +21,22 @@ public:
 
 	static Vector2 Zero();
 
-	static float Distance(Vector2 a, Vector2 b);
+	static double Distance(Vector2 a, Vector2 b);
 };
 
 class Vector3
 {
 public:
 	Vector3();
-	Vector3(float _x, float _y, float _z);
+	Vector3(double _x, double _y, double _z);
 	~Vector3();
 
-	float x, y, z;
+	double x, y, z;
 
 	Vector3 operator *(Vector3 a);
-	Vector3 operator *(float f);
+	Vector3 operator *(double f);
 	Vector3 operator /(Vector3 a);
-	Vector3 operator /(float f);
+	Vector3 operator /(double f);
 	Vector3 operator +(Vector3 a);
 	Vector3 operator -(Vector3 a);
 	bool operator ==(Vector3 a);
@@ -44,14 +44,14 @@ public:
 
 	bool IsZero() const;
 
-	static float Dot(Vector3 left, Vector3 right);
-	static float Distance(Vector3 a, Vector3 b);
+	static double Dot(Vector3 left, Vector3 right);
+	static double Distance(Vector3 a, Vector3 b);
 	static int FormattedDistance(Vector3 a, Vector3 b);
 	static Vector3 Zero();
-	static Vector3 Lerp(Vector3 a, Vector3 b, float t);
+	static Vector3 Lerp(Vector3 a, Vector3 b, double t);
 
-	float Length() const;
-	float LengthSqr() const;
+	double Length() const;
+	double LengthSqr() const;
 
 	Vector3 Clamp() const;
 };
@@ -59,14 +59,14 @@ public:
 struct ViewMatrix
 {
 public:
-	float matrix[4][4];
+	double matrix[4][4];
 
 	Vector3 Transform(const Vector3 vector) const;
 };
 
 Vector2::Vector2() : x(0), y(0) { }
 
-Vector2::Vector2(float _x, float _y) : x(_x), y(_y) { }
+Vector2::Vector2(double _x, double _y) : x(_x), y(_y) { }
 
 Vector2::~Vector2() { }
 
@@ -110,7 +110,7 @@ Vector2 Vector2::Zero()
 	return Vector2();
 }
 
-float Vector2::Distance(Vector2 a, Vector2 b)
+double Vector2::Distance(Vector2 a, Vector2 b)
 {
 	const auto difference = Vector2(
 		a.x - b.x,
@@ -123,7 +123,7 @@ float Vector2::Distance(Vector2 a, Vector2 b)
 
 Vector3::Vector3() : x(0), y(0), z(0) { }
 
-Vector3::Vector3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
+Vector3::Vector3(double _x, double _y, double _z) : x(_x), y(_y), z(_z) { }
 
 Vector3::~Vector3() { }
 
@@ -132,7 +132,7 @@ Vector3 Vector3::operator*(Vector3 a)
 	return Vector3(x * a.x, y * a.y, z * a.z);
 }
 
-Vector3 Vector3::operator*(float f)
+Vector3 Vector3::operator*(double f)
 {
 	return Vector3(x * f, y * f, z * f);
 }
@@ -142,7 +142,7 @@ Vector3 Vector3::operator/(Vector3 a)
 	return Vector3(x / a.x, y / a.y, z / a.z);
 }
 
-Vector3 Vector3::operator/(float f)
+Vector3 Vector3::operator/(double f)
 {
 	return Vector3(x / f, y / f, z / f);
 }
@@ -172,12 +172,12 @@ bool Vector3::IsZero() const
 	return !x && !y && !z;
 }
 
-float Vector3::Dot(Vector3 left, Vector3 right)
+double Vector3::Dot(Vector3 left, Vector3 right)
 {
 	return (left.x * right.x) + (left.y * right.y) + (left.z * right.z);
 }
 
-float Vector3::Distance(Vector3 a, Vector3 b)
+double Vector3::Distance(Vector3 a, Vector3 b)
 {
 	const auto difference = Vector3(
 		a.x - b.x,
@@ -212,12 +212,12 @@ Vector3 Vector3::Zero()
 	return Vector3();
 }
 
-float Vector3::Length() const
+double Vector3::Length() const
 {
 	return sqrt((x * x) + (y * y) + (z * z));
 }
 
-float Vector3::LengthSqr() const
+double Vector3::LengthSqr() const
 {
 	return (x * x) + (y * y) + (z * z);
 }
@@ -240,7 +240,7 @@ Vector3 Vector3::Clamp() const
 	return angles;
 }
 
-Vector3 Vector3::Lerp(Vector3 a, Vector3 b, float t)
+Vector3 Vector3::Lerp(Vector3 a, Vector3 b, double t)
 {
 	return a * (1.f - t) + b * t;
 }
