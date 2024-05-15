@@ -163,6 +163,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dependencies\Dear ImGui\addons\imgui_addons.cpp" />
     <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="dependencies\Dear ImGui\imgui.cpp" />
@@ -171,10 +172,12 @@
     <ClCompile Include="dependencies\Dear ImGui\imgui_tables.cpp" />
     <ClCompile Include="dependencies\Dear ImGui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\driver\driver.cpp" />
-    <ClCompile Include="overlay.cpp" />
+    <ClCompile Include="dependencies\overlay.cpp" />
     <ClCompile Include="source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cheat\aim.hpp" />
+    <ClInclude Include="dependencies\Dear ImGui\addons\imgui_addons.h" />
     <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_win32.h" />
     <ClInclude Include="dependencies\Dear ImGui\imconfig.h" />
@@ -185,10 +188,22 @@
     <ClInclude Include="dependencies\Dear ImGui\imstb_truetype.h" />
     <ClInclude Include="dependencies\driver\driver.h" />
     <ClInclude Include="dependencies\driver\interface.h" />
+    <ClInclude Include="dependencies\Fonts\EspFont.h" />
+    <ClInclude Include="dependencies\Fonts\fa_solid_900.h" />
+    <ClInclude Include="dependencies\Fonts\gun_icons.hpp" />
+    <ClInclude Include="dependencies\Fonts\IconsFontAwesome6.h" />
+    <ClInclude Include="dependencies\Fonts\IconsFontAwesome6Brands.h" />
+    <ClInclude Include="dependencies\Fonts\IconsFontAwesome6Brands_Bytes.h" />
+    <ClInclude Include="dependencies\Fonts\IconsFontAwesome6_Bytes.h" />
+    <ClInclude Include="dependencies\Fonts\Poppins_Medium.h" />
+    <ClInclude Include="dependencies\Fonts\weapon_font.h" />
     <ClInclude Include="dependencies\includes.hpp" />
     <ClInclude Include="dependencies\math.h" />
     <ClInclude Include="dependencies\xor.hpp" />
-    <ClInclude Include="overlay.h" />
+    <ClInclude Include="dependencies\overlay.h" />
+    <ClInclude Include="cheat\sdk.hpp" />
+    <ClInclude Include="cheat\settings.hpp" />
+    <ClInclude Include="cheat\visual.hpp" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="dependencies\driver\asm\assert.asm">
