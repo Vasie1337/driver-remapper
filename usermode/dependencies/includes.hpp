@@ -21,10 +21,6 @@
 #include <list>
 #include <algorithm>
 #include <TlHelp32.h>
-#include <d3dx9math.h>
-#include <unordered_map>
-
-#pragma comment(lib, "D3dx9.lib")
 
 #define m_log(fmt, ...) printf("[%s] " fmt, __FUNCTION__, ##__VA_ARGS__)
 
@@ -32,6 +28,6 @@
 #include <dependencies/driver/driver.h>
 #include <dependencies/math.h>
 
-#include <dependencies/overlay.h>
+#include <overlay.h>
 
 
