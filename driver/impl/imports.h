@@ -36,9 +36,25 @@ PsGetProcessSectionBaseAddress
 NTSTATUS
 IoCreateDriver
 (
-	PUNICODE_STRING DriverName, OPTIONAL
+	PUNICODE_STRING DriverName,
 	PDRIVER_INITIALIZE InitializationFunction
 );
+
+NTSTATUS 
+ObCreateObject(
+	KPROCESSOR_MODE ProbeMode,
+	POBJECT_TYPE 	Type,
+	POBJECT_ATTRIBUTES ObjectAttributes,
+	KPROCESSOR_MODE 	AccessMode,
+	PVOID ParseContext,
+	ULONG 	ObjectSize,
+	ULONG PagedPoolCharge,
+	ULONG NonPagedPoolCharge,
+	PVOID * Object
+);
+
+extern "C" __declspec(dllimport) POBJECT_TYPE IoDriverObjectType;
+
 }
 
 namespace imports

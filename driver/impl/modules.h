@@ -257,6 +257,17 @@ namespace ctx
         }
     }
 
+    void zero_address_range(uintptr_t address, size_t size)
+    {
+        uint8_t* Buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, size);
+        if (Buffer)
+        {
+            crt::kmemset(Buffer, 0xCC, size);
+            ctx::write_protected_address((PVOID)address, Buffer, size, true);
+            imports::ex_free_pool_with_tag(Buffer, 0);
+        }
+    }
+
     void restore_address_range(uintptr_t address, size_t size, uint8_t* original_bytes) 
     {
         ctx::write_protected_address((void*)address, original_bytes, size, true);
@@ -269,5 +280,16 @@ namespace ctx
             const auto Byte = *(uint8_t*)(address + i);
             printf("%02x\n", Byte);
         }
+    }
+
+    size_t get_function_size(PVOID function)
+    {
+        PBYTE Byte = (PBYTE)function;
+        size_t Size = 0;
+        do
+        {
+            ++Size;
+        } while (*(Byte++) != 0xC3);
+        return Size;
     }
 }

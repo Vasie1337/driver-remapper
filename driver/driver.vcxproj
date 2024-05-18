@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoint.cpp" />
+    <ClInclude Include="impl\drivers.h" />
     <ClInclude Include="requests\physical\pml4_walk_entry.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
@@ -190,7 +191,7 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <MinimumRequiredVersion>$(SUBSYSTEM_NATVER)</MinimumRequiredVersion>
       <Driver>Driver</Driver>
-      <EntryPointSymbol>DriverEntry</EntryPointSymbol>
+      <EntryPointSymbol>manual_mapped_entry</EntryPointSymbol>
       <RandomizedBaseAddress />
       <DataExecutionPrevention />
       <SetChecksum>true</SetChecksum>

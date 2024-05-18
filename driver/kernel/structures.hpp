@@ -555,3 +555,30 @@ typedef struct _MMPFN
 		}; /* size: 0x0008 */
 	} /* size: 0x0008 */ u4;
 } MMPFN, * PMMPFN; /* size: 0x0030 */
+
+typedef struct _IO_CLIENT_EXTENSION
+{
+	struct _IO_CLIENT_EXTENSION* NextExtension;
+	PVOID ClientIdentificationAddress;
+} IO_CLIENT_EXTENSION, * PIO_CLIENT_EXTENSION;
+
+typedef struct _EXTENDED_DRIVER_EXTENSION
+{
+	struct _DRIVER_OBJECT* DriverObject;
+	PDRIVER_ADD_DEVICE AddDevice;
+	ULONG Count;
+	UNICODE_STRING ServiceKeyName;
+	PIO_CLIENT_EXTENSION ClientDriverExtension;
+	PFS_FILTER_CALLBACKS FsFilterCallbacks;
+} EXTENDED_DRIVER_EXTENSION, * PEXTENDED_DRIVER_EXTENSION;
+
+typedef
+NTSTATUS
+EXDRIVER_INITIALIZE(
+	_In_ struct _DRIVER_OBJECT* DriverObject,
+	_In_ PUNICODE_STRING RegistryPath,
+	_In_ PVOID Parameter
+);
+
+typedef EXDRIVER_INITIALIZE* PEXDRIVER_INITIALIZE;
+

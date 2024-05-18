@@ -4,8 +4,9 @@
 #include <intrin.h>
 #include <ntimage.h>
 #include <ntstatus.h>
-#include <kernel/defs.h>
+#include <ntstrsafe.h>
 
+#include <kernel/defs.h>
 #include <kernel/structures.hpp>
 #include <kernel/xor.hpp>
 
@@ -14,10 +15,41 @@
 #include <impl/imports.h>
 #include <impl/scanner.h>
 #include <impl/modules.h>
+#include <impl/drivers.h>
 
 #define PATCH_LENTH 5
 
-__int64 DriverEntry(PVOID a1, PVOID a2)
+modules::section_data text_section = modules::section_data();
+
+#pragma runtime_checks("", off)
+#pragma optimize("", off)
+
+typedef LONG(*pPrint)(PCSTR format, ...);
+
+typedef struct _DRIVER_CONTEXT {
+	pPrint Print;
+}DRIVER_CONTEXT, * PDRIVER_CONTEXT;
+
+template <typename T>
+T GetKernelFunctionAddress(const WCHAR* functionName)
+{
+	UNICODE_STRING unicodeFunctionName;
+	RtlInitUnicodeString(&unicodeFunctionName, functionName);
+
+	return reinterpret_cast<T>(MmGetSystemRoutineAddress(&unicodeFunctionName));
+}
+
+NTSTATUS new_driver_entry(PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path, PDRIVER_CONTEXT context)
+{
+	context->Print("Hello from shellcode\n");
+
+	return STATUS_SUCCESS;
+}
+
+#pragma runtime_checks("", restore)
+#pragma optimize("", on)
+
+NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 {
 	const auto ntoskrnl_base = modules::get_kernel_module(skCrypt("ntoskrnl.exe"));
 	if (!ntoskrnl_base)
@@ -35,19 +67,19 @@ __int64 DriverEntry(PVOID a1, PVOID a2)
 	}
 	printf("PnpCallDriverEntry address: 0x%llx\n", calldrv_address);
 
-	const auto original_bytes = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, PATCH_LENTH);
+	const auto original_bytes = reinterpret_cast<uint8_t*>(imports::ex_allocate_pool(NonPagedPool, PATCH_LENTH));
 	if (!original_bytes)
 	{
 		printf("Failed to allocate buffer.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
-	printf("Original bytes buffer: 0x%llx\n", (uintptr_t)original_bytes);
+	printf("Original bytes buffer: 0x%llx\n", (reinterpret_cast<uintptr_t>(original_bytes)));
 
 	// Patch IopLoadDriver to not call driver entry
 	ctx::nop_address_range(calldrv_address, PATCH_LENTH, original_bytes);
 
 	// Load driver to exploit
-	if (!modules::load_vurn_driver(L"\\registry\\machine\\SYSTEM\\CurrentControlSet\\Services\\drv1"))
+	if (!modules::load_vurn_driver(skCrypt(L"\\registry\\machine\\SYSTEM\\CurrentControlSet\\Services\\drv1")))
 	{
 		printf("Couldnt load driver.\n");
 		ctx::restore_address_range(calldrv_address, PATCH_LENTH, original_bytes);
@@ -70,7 +102,7 @@ __int64 DriverEntry(PVOID a1, PVOID a2)
 	}
 	printf("Vurnable driver base: 0x%llx\n", vurn_driver_base);
 
-	const auto text_section = modules::find_section(vurn_driver_base, ".text");
+	text_section = modules::find_section(vurn_driver_base, skCrypt(".text"));
 	if (!text_section) 
 	{
 		printf("Text section is invalid.\n");
@@ -79,15 +111,28 @@ __int64 DriverEntry(PVOID a1, PVOID a2)
 	printf("Text section size: 0x%llx\n", text_section.size);
 	printf("Text section base: 0x%llx\n", text_section.address);
 
-	const auto buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, text_section.size);
-	if (!buffer)
+	// Zero .text section
+	ctx::zero_address_range(text_section.address, text_section.size);
+
+	const auto shellcode_size = ctx::get_function_size(new_driver_entry);
+	printf("Shellcode size: 0x%llx\n", shellcode_size);
+
+	// Write new driver entry
+	ctx::write_protected_address(reinterpret_cast<void*>(text_section.address), new_driver_entry, shellcode_size, true);
+
+	// Setup context
+    PDRIVER_CONTEXT context = reinterpret_cast<PDRIVER_CONTEXT>(imports::ex_allocate_pool(NonPagedPool, sizeof(DRIVER_CONTEXT)));
+	if (!context)
 	{
-		printf("Failed to allocate buffer.\n");
+		printf("Failed to allocate context.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
 
-	ctx::nop_address_range(text_section.address, text_section.size, buffer);
-	imports::ex_free_pool_with_tag(buffer, 0);
+    context->Print = GetKernelFunctionAddress<pPrint>(L"DbgPrint");
+	context->Print("Hello from driver\n");
 
-	return STATUS_SUCCESS;
+    printf("Print address: 0x%llx\n", context->Print);
+
+	// Create new driver and call entry
+	return 0;
 }
