@@ -24,26 +24,11 @@ modules::section_data text_section = modules::section_data();
 #pragma runtime_checks("", off)
 #pragma optimize("", off)
 
-typedef LONG(*pPrint)(PCSTR format, ...);
-
-typedef struct _DRIVER_CONTEXT {
-	pPrint Print;
-}DRIVER_CONTEXT, * PDRIVER_CONTEXT;
-
-template <typename T>
-T GetKernelFunctionAddress(const WCHAR* functionName)
+NTSTATUS new_driver_entry(PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path, PVOID param)
 {
-	UNICODE_STRING unicodeFunctionName;
-	RtlInitUnicodeString(&unicodeFunctionName, functionName);
 
-	return reinterpret_cast<T>(MmGetSystemRoutineAddress(&unicodeFunctionName));
-}
 
-NTSTATUS new_driver_entry(PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path, PDRIVER_CONTEXT context)
-{
-	context->Print("Hello from shellcode\n");
-
-	return STATUS_SUCCESS;
+	return (NTSTATUS)param;
 }
 
 #pragma runtime_checks("", restore)
@@ -120,19 +105,6 @@ NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 	// Write new driver entry
 	ctx::write_protected_address(reinterpret_cast<void*>(text_section.address), new_driver_entry, shellcode_size, true);
 
-	// Setup context
-    PDRIVER_CONTEXT context = reinterpret_cast<PDRIVER_CONTEXT>(imports::ex_allocate_pool(NonPagedPool, sizeof(DRIVER_CONTEXT)));
-	if (!context)
-	{
-		printf("Failed to allocate context.\n");
-		return STATUS_UNSUCCESSFUL;
-	}
-
-    context->Print = GetKernelFunctionAddress<pPrint>(L"DbgPrint");
-	context->Print("Hello from driver\n");
-
-    printf("Print address: 0x%llx\n", context->Print);
-
 	// Create new driver and call entry
-	return 0;
+	return drivers::create_driver(0, reinterpret_cast<PEXDRIVER_INITIALIZE>(text_section.address), (PVOID)0x1337);
 }
