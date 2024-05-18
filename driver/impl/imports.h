@@ -101,6 +101,11 @@ namespace imports
 		return MmMapIoSpaceEx(PhysicalAddress, NumberOfBytes, Protect);
 	}
 
+	VentroAPI NTSTATUS zw_load_driver( PUNICODE_STRING DriverServiceName )
+	{
+		return ZwLoadDriver(DriverServiceName);
+	}
+
 	VentroAPI VOID mm_unmap_io_space( PVOID BaseAddress, SIZE_T NumberOfBytes )
 	{
 		return MmUnmapIoSpace(BaseAddress, NumberOfBytes);

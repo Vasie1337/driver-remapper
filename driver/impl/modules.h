@@ -113,7 +113,15 @@ namespace modules
         return info;
     }
 
-    auto find_section( uintptr_t ModuleBase, char* SectionName ) -> uintptr_t
+    struct section_data { 
+        uintptr_t address; 
+        size_t size; 
+        bool operator!() const {
+            return address == 0 || size == 0;
+        }
+    };
+
+    auto find_section( uintptr_t ModuleBase, char* SectionName ) -> section_data
     {
         PIMAGE_NT_HEADERS NtHeaders = ( PIMAGE_NT_HEADERS ) ( ModuleBase + ( ( PIMAGE_DOS_HEADER ) ModuleBase )->e_lfanew );
         PIMAGE_SECTION_HEADER Sections = IMAGE_FIRST_SECTION( NtHeaders );
@@ -123,11 +131,12 @@ namespace modules
             PIMAGE_SECTION_HEADER Section = &Sections [ i ];
             if ( crt::kmemcmp( Section->Name, SectionName, 5 ) == 0 )
             {
-                return ModuleBase + Section->VirtualAddress;
+                section_data data{ ModuleBase + Section->VirtualAddress, Section->SizeOfRawData };
+                return data;
             }
         }
 
-        return 0;
+        return section_data();
     }
 
     uintptr_t get_kernel_module(const char* name)
@@ -151,7 +160,7 @@ namespace modules
         {
             const auto& mod = info->Modules[i];
 
-            printf( "%s\n", mod.FullPathName + mod.OffsetToFileName );
+            //printf( "%s\n", mod.FullPathName + mod.OffsetToFileName );
 
             if (crt::strcmp(to_lower_c((char*)mod.FullPathName + mod.OffsetToFileName), name) == 0)
             {
@@ -174,6 +183,18 @@ namespace modules
             return true;
         }
 
+        return false;
+    }
+
+    bool load_vurn_driver(PCWSTR driver_name)
+    {
+        UNICODE_STRING ServiceName{};
+        imports::rtl_init_unicode_string(&ServiceName, driver_name);
+
+        const auto Status = imports::zw_load_driver(&ServiceName);
+        if (Status == STATUS_SUCCESS || Status == STATUS_IMAGE_ALREADY_LOADED) {
+            return true;
+        }
         return false;
     }
 }
@@ -221,5 +242,32 @@ namespace ctx
         imports::io_free_mdl( Mdl );
 
         return Status;
+    }
+
+    void nop_address_range(uintptr_t address, size_t size, uint8_t* original_bytes)
+    {
+        crt::kmemcpy(original_bytes, (void*)address, size);
+
+        uint8_t* Buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, size);
+        if (Buffer)
+        {
+            crt::kmemset(Buffer, 0x90, size);
+            ctx::write_protected_address((PVOID)address, Buffer, size, true);
+            imports::ex_free_pool_with_tag(Buffer, 0);
+        }
+    }
+
+    void restore_address_range(uintptr_t address, size_t size, uint8_t* original_bytes) 
+    {
+        ctx::write_protected_address((void*)address, original_bytes, size, true);
+    }
+
+    void print_bytes(uintptr_t address, size_t size) 
+    {
+        for (uintptr_t i = 0; i < size; ++i) 
+        {
+            const auto Byte = *(uint8_t*)(address + i);
+            printf("%02x\n", Byte);
+        }
     }
 }
