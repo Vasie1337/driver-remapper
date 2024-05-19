@@ -5,7 +5,7 @@
 
 EXTERN_C
 {
-NTSTATUS NTAPI MmCopyVirtualMemory
+NTSTATUS MmCopyVirtualMemory
 (
 	PEPROCESS SourceProcess,
 	PVOID SourceAddress,
@@ -41,7 +41,8 @@ IoCreateDriver
 );
 
 NTSTATUS 
-ObCreateObject(
+ObCreateObject
+(
 	KPROCESSOR_MODE ProbeMode,
 	POBJECT_TYPE 	Type,
 	POBJECT_ATTRIBUTES ObjectAttributes,
@@ -53,8 +54,14 @@ ObCreateObject(
 	PVOID * Object
 );
 
-extern "C" __declspec(dllimport) POBJECT_TYPE IoDriverObjectType;
+PVOID
+RtlFindExportedRoutineByName
+(
+	PVOID ImageBase,
+	PCCH RoutineNam
+);
 
+__declspec(dllimport) POBJECT_TYPE IoDriverObjectType;
 }
 
 namespace imports
@@ -104,7 +111,7 @@ namespace imports
 	//	//uintptr_t ke_stack_attach_process;
 	//	//uintptr_t ke_unstack_detach_process;
 	//};
-
+	// 
 	//m_imported imported;
 
 	VentroAPI NTSTATUS rtl_get_version( PRTL_OSVERSIONINFOW lpVersionInformation )
@@ -115,6 +122,11 @@ namespace imports
 	VentroAPI PVOID mm_map_io_space_ex( PHYSICAL_ADDRESS PhysicalAddress, SIZE_T NumberOfBytes, ULONG Protect )
 	{
 		return MmMapIoSpaceEx(PhysicalAddress, NumberOfBytes, Protect);
+	}
+
+	VentroAPI PVOID rtl_find_exported_routine_by_name(PVOID ImageBase, PCCH RoutineNam)
+	{
+		return RtlFindExportedRoutineByName(ImageBase, RoutineNam);
 	}
 
 	VentroAPI NTSTATUS zw_load_driver( PUNICODE_STRING DriverServiceName )

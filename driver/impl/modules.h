@@ -88,6 +88,49 @@ namespace crt
 
         return dest;
     }
+
+
+}
+
+namespace pte
+{
+    unsigned __int64 find_pte_base()
+    {
+        unsigned char MiGetPteAddress_sequence[] =
+        {
+            0x48, 0xC1, 0xE9, 0x09, 0x48, 0xB8, 0xF8, 0xFF, 0xFF, 0xFF, 0x7F, 0x00, 0x00, 0x00, 0x48, 0x23, 0xC8, 0x48, 0xB8
+        };
+
+        const auto ntoskrnl = modules::get_kernel_module(skCrypt("ntoskrnl.exe"));
+        if (!ntoskrnl)
+        {
+            printf("Couldnt find ntoskrnl.\n");
+            return STATUS_UNSUCCESSFUL;
+        }
+
+        unsigned __int64 result = scanner::search_byte_sequence(unsigned __int64(ntoskrnl.address), unsigned __int64(ntoskrnl.size), MiGetPteAddress_sequence);
+
+        return result ? *(unsigned __int64*)(result + sizeof(MiGetPteAddress_sequence)) : 0;
+    }
+
+    PPTE resolve_pte(ULONGLONG addr)
+    {
+        auto MiGetPteAddress = [](unsigned __int64 a1) -> unsigned __int64
+        {
+            unsigned __int64 pte_base = find_pte_base();
+
+            return pte_base ? ((a1 >> 9) & 0x7FFFFFFFF8) + pte_base : 0;
+        };
+
+        PPTE pte = (PPTE)MiGetPteAddress(addr);
+        if (!pte || !pte->present) 
+        {
+            printf("Invalid PTE.\n");
+            return nullptr;
+        }
+
+        return pte;
+    }
 }
 
 namespace modules
@@ -139,7 +182,15 @@ namespace modules
         return section_data();
     }
 
-    uintptr_t get_kernel_module(const char* name)
+    struct kernel_module_data {
+        uintptr_t address;
+        size_t size;
+        bool operator!() const {
+            return address == 0 || size == 0;
+        }
+    };
+
+    kernel_module_data get_kernel_module(const char* name)
     {
         const auto to_lower = [](char* string) -> const char*
         {
@@ -154,7 +205,7 @@ namespace modules
         const PRTL_PROCESS_MODULES info = (PRTL_PROCESS_MODULES)get_system_information(SystemModuleInformation);
 
         if (!info)
-            return NULL;
+            return kernel_module_data();
 
         for (size_t i = 0; i < info->NumberOfModules; ++i)
         {
@@ -164,14 +215,15 @@ namespace modules
 
             if (crt::strcmp(to_lower_c((char*)mod.FullPathName + mod.OffsetToFileName), name) == 0)
             {
-                const void* address = mod.ImageBase;
+                const auto address = (uintptr_t)mod.ImageBase;
+                const auto size = mod.ImageSize;
                 imports::ex_free_pool_with_tag(info, 0);
-                return (uintptr_t)address;
+                return { address, size };
             }
         }
 
         imports::ex_free_pool_with_tag(info, 0);
-        return NULL;
+        return kernel_module_data();
     }
 
     bool safe_copy( void* dst, void* src, size_t size )

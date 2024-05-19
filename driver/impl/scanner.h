@@ -97,4 +97,16 @@ namespace scanner
 
         return 0;
     }
+
+    unsigned __int64 search_byte_sequence(unsigned __int64 base, unsigned __int64 size, unsigned char byte_sequence[])
+    {
+        for (int i = 0; i < size - sizeof(byte_sequence); ++i)
+        {
+            if (RtlCompareMemory((void*)(base + i), byte_sequence, sizeof(byte_sequence)) == sizeof(byte_sequence))
+            {
+                return base + i;
+            }
+        }
+        return 0;
+    }
 }
