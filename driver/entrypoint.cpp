@@ -20,19 +20,28 @@
 #define PATCH_LENTH 5
 
 modules::section_data text_section = modules::section_data();
+modules::section_data data_section = modules::section_data();
+
+typedef ULONG(_cdecl* pPrint)(PCSTR Format, ...);
+
+
+typedef struct _DRIVER_DATA
+{
+	PVOID Print;
+	const char* Text;
+
+}DRIVERDATA, *PDRIVERDATA;
 
 #pragma runtime_checks("", off)
 #pragma optimize("", off)
 
-NTSTATUS new_driver_entry(PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path, PVOID param)
+PVOID new_driver_entry(PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path, PVOID address)
 {
+	//pPrint Print = (pPrint)driver_data.Print;
 
 
-	return (NTSTATUS)param;
+	return address;
 }
-
-#pragma runtime_checks("", restore)
-#pragma optimize("", on)
 
 NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 {
@@ -96,8 +105,20 @@ NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 	printf("Text section size: 0x%llx\n", text_section.size);
 	printf("Text section base: 0x%llx\n", text_section.address);
 
+	data_section = modules::find_section(vurn_driver_base, skCrypt(".data"));
+	if (!data_section)
+	{
+		printf("Data section is invalid.\n");
+		return STATUS_UNSUCCESSFUL;
+	}
+	printf("Data section size: 0x%llx\n", data_section.size);
+	printf("Data section base: 0x%llx\n", data_section.address);
+
 	// Zero .text section
 	ctx::zero_address_range(text_section.address, text_section.size);
+
+	// Zero .data section
+	ctx::zero_address_range(data_section.address, data_section.size);
 
 	const auto shellcode_size = ctx::get_function_size(new_driver_entry);
 	printf("Shellcode size: 0x%llx\n", shellcode_size);
@@ -106,5 +127,8 @@ NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 	ctx::write_protected_address(reinterpret_cast<void*>(text_section.address), new_driver_entry, shellcode_size, true);
 
 	// Create new driver and call entry
-	return drivers::create_driver(0, reinterpret_cast<PEXDRIVER_INITIALIZE>(text_section.address), (PVOID)0x1337);
+	return drivers::create_driver(0, reinterpret_cast<PEXDRIVER_INITIALIZE>(text_section.address), (PVOID)data_section.address);
 }
+
+#pragma runtime_checks("", restore)
+#pragma optimize("", on)

@@ -13,7 +13,7 @@ namespace drivers
     NTSTATUS __fastcall create_driver(
         _In_opt_ PUNICODE_STRING DriverName,
         _In_ PEXDRIVER_INITIALIZE InitializationFunction,
-        _In_ PVOID Parameter)
+        _In_opt_ PVOID Parameter)
 
 
     {
