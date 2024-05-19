@@ -92,47 +92,6 @@ namespace crt
 
 }
 
-namespace pte
-{
-    unsigned __int64 find_pte_base()
-    {
-        unsigned char MiGetPteAddress_sequence[] =
-        {
-            0x48, 0xC1, 0xE9, 0x09, 0x48, 0xB8, 0xF8, 0xFF, 0xFF, 0xFF, 0x7F, 0x00, 0x00, 0x00, 0x48, 0x23, 0xC8, 0x48, 0xB8
-        };
-
-        const auto ntoskrnl = modules::get_kernel_module(skCrypt("ntoskrnl.exe"));
-        if (!ntoskrnl)
-        {
-            printf("Couldnt find ntoskrnl.\n");
-            return STATUS_UNSUCCESSFUL;
-        }
-
-        unsigned __int64 result = scanner::search_byte_sequence(unsigned __int64(ntoskrnl.address), unsigned __int64(ntoskrnl.size), MiGetPteAddress_sequence);
-
-        return result ? *(unsigned __int64*)(result + sizeof(MiGetPteAddress_sequence)) : 0;
-    }
-
-    PPTE resolve_pte(ULONGLONG addr)
-    {
-        auto MiGetPteAddress = [](unsigned __int64 a1) -> unsigned __int64
-        {
-            unsigned __int64 pte_base = find_pte_base();
-
-            return pte_base ? ((a1 >> 9) & 0x7FFFFFFFF8) + pte_base : 0;
-        };
-
-        PPTE pte = (PPTE)MiGetPteAddress(addr);
-        if (!pte || !pte->present) 
-        {
-            printf("Invalid PTE.\n");
-            return nullptr;
-        }
-
-        return pte;
-    }
-}
-
 namespace modules
 {
     void* get_system_information(SYSTEM_INFORMATION_CLASS information_class)
@@ -343,5 +302,39 @@ namespace ctx
             ++Size;
         } while (*(Byte++) != 0xC3);
         return Size;
+    }
+}
+
+namespace pte
+{
+    unsigned __int64 find_pte_base()
+    {
+        unsigned char MiGetPteAddress_sequence[] =
+        {
+            0x48, 0xC1, 0xE9, 0x09, 0x48, 0xB8, 0xF8, 0xFF, 0xFF, 0xFF, 0x7F, 0x00, 0x00, 0x00, 0x48, 0x23, 0xC8, 0x48, 0xB8
+        };
+
+        const auto ntoskrnl = modules::get_kernel_module(skCrypt("ntoskrnl.exe"));
+        if (!ntoskrnl)
+        {
+            printf("Couldnt find ntoskrnl.\n");
+            return STATUS_UNSUCCESSFUL;
+        }
+
+        unsigned __int64 result = scanner::search_byte_sequence(unsigned __int64(ntoskrnl.address), unsigned __int64(ntoskrnl.size), MiGetPteAddress_sequence);
+
+        return result ? *(unsigned __int64*)(result + sizeof(MiGetPteAddress_sequence)) : 0;
+    }
+
+    unsigned __int64 resolve_pte(ULONGLONG addr)
+    {
+        auto MiGetPteAddress = [](unsigned __int64 a1) -> unsigned __int64
+        {
+            unsigned __int64 pte_base = find_pte_base();
+
+            return pte_base ? ((a1 >> 9) & 0x7FFFFFFFF8) + pte_base : 0;
+        };
+
+        return MiGetPteAddress(addr);
     }
 }
