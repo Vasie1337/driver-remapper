@@ -1,7 +1,7 @@
 #pragma once
 namespace pe_utils
 {
-	PVOID get_module_base(LPCSTR moduleName);
+	void* get_module_base(LPCSTR moduleName);
 	VOID* get_module_list();
 	VOID* get_loaded_module_base(const unsigned short* mod_name);
 	VOID* find_export_by_ordinal(VOID* module, UINT16 ordinal);
@@ -193,9 +193,9 @@ namespace pe_utils
 		return (VOID*)((UINT8*)module + *entry);
 	}
 
-	PVOID get_module_base(LPCSTR moduleName) 
+	void* get_module_base(LPCSTR moduleName) 
 	{
-		PVOID moduleBase = NULL;
+		void* moduleBase = NULL;
 		ULONG info = 0;
 		NTSTATUS status = ZwQuerySystemInformation(SystemModuleInformation, 0, info, &info);
 

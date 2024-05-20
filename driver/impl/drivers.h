@@ -13,7 +13,7 @@ namespace drivers
     NTSTATUS __fastcall create_driver(
         _In_opt_ PUNICODE_STRING DriverName,
         _In_ PEXDRIVER_INITIALIZE InitializationFunction,
-        _In_opt_ PVOID Parameter)
+        _In_opt_ void* Parameter)
 
 
     {
@@ -64,7 +64,7 @@ namespace drivers
             ObjectSize,
             0,
             0,
-            (PVOID*)&DriverObject);
+            (void**)&DriverObject);
         if (!NT_SUCCESS(Status)) return Status;
 
         /* Set up the Object */
@@ -136,7 +136,7 @@ namespace drivers
             0,
             IoDriverObjectType,
             KernelMode,
-            (PVOID*)&DriverObject,
+            (void**)&DriverObject,
             NULL);
 
         /* Close the extra handle */

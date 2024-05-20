@@ -9,8 +9,8 @@ namespace physical {
     uint64_t eac_cr3;
     
     auto read_physical(
-        std::uintptr_t address,
-        PVOID buffer,
+        std::std::uint64_t address,
+        void* buffer,
         size_t size,
         size_t* bytes ) -> NTSTATUS
     {
@@ -19,8 +19,8 @@ namespace physical {
         return imports::mm_copy_memory( buffer, target_address, size, MM_COPY_MEMORY_PHYSICAL, bytes );
     }
 
-    auto write_physical( std::uintptr_t address,
-        PVOID buffer,
+    auto write_physical( std::std::uint64_t address,
+        void* buffer,
         size_t size,
         size_t* bytes ) -> NTSTATUS
     {
@@ -30,7 +30,7 @@ namespace physical {
         PHYSICAL_ADDRESS AddrToWrite = { 0 };
         AddrToWrite.QuadPart = ( LONGLONG ) address;
 
-        PVOID pmapped_mem = imports::mm_map_io_space_ex( AddrToWrite, size, PAGE_READWRITE );
+        void* pmapped_mem = imports::mm_map_io_space_ex( AddrToWrite, size, PAGE_READWRITE );
 
         if ( !pmapped_mem )
             return STATUS_UNSUCCESSFUL;
@@ -43,8 +43,8 @@ namespace physical {
     }
 
     auto translate_linear(
-        std::uintptr_t directory_base,
-        std::uintptr_t address ) -> std::uintptr_t {
+        std::std::uint64_t directory_base,
+        std::std::uint64_t address ) -> std::std::uint64_t {
 
         directory_base &= ~0xf;
 
@@ -56,13 +56,13 @@ namespace physical {
         auto p_mask = ( ( ~0xfull << 8 ) & 0xfffffffffull );
 
         size_t readsize = 0;
-        std::uintptr_t pdpe = 0;
+        std::std::uint64_t pdpe = 0;
         read_physical( directory_base + 8 * pdp, &pdpe, sizeof( pdpe ), &readsize );
         if ( ~pdpe & 1 ) {
             return 0;
         }
 
-        std::uintptr_t pde = 0;
+        std::std::uint64_t pde = 0;
         read_physical( ( pdpe & p_mask ) + 8 * pd, &pde, sizeof( pde ), &readsize );
         if ( ~pde & 1 ) {
             return 0;
@@ -72,7 +72,7 @@ namespace physical {
         if ( pde & 0x80 )
             return ( pde & ( ~0ull << 42 >> 12 ) ) + ( address & ~( ~0ull << 30 ) );
 
-        std::uintptr_t pteAddr = 0;
+        std::std::uint64_t pteAddr = 0;
         read_physical( ( pde & p_mask ) + 8 * pt, &pteAddr, sizeof( pteAddr ), &readsize );
         if ( ~pteAddr & 1 ) {
             return 0;

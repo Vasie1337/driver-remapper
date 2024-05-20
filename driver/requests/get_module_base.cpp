@@ -5,7 +5,7 @@ namespace request
 	NTSTATUS resolve_peb( invoke_data* request )
 	{
 		peb_invoke data = { 0 };
-		std::uintptr_t out = 0;
+		std::std::uint64_t out = 0;
 
 		if ( !modules::safe_copy( &data, request->data, sizeof( peb_invoke ) ) ) {
 			return STATUS_UNSUCCESSFUL;
@@ -31,7 +31,7 @@ namespace request
 
 	NTSTATUS get_module_base( invoke_data* request ) {
 		base_invoke data = { 0 };
-		std::uintptr_t out = 0;
+		std::std::uint64_t out = 0;
 
 		if ( !modules::safe_copy( &data, request->data, sizeof( base_invoke ) ) ) {
 			return STATUS_UNSUCCESSFUL;
@@ -50,7 +50,7 @@ namespace request
 		}
 
 		if ( !data.name ) {
-			uintptr_t base = ( uintptr_t ) imports::ps_get_process_section_base_address( process );
+			std::uint64_t base = ( std::uint64_t ) imports::ps_get_process_section_base_address( process );
 
 			reinterpret_cast< base_invoke* > ( request->data )->handle = base;
 

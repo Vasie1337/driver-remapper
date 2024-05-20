@@ -2,7 +2,7 @@
 
 namespace pml4
 {
-	PVOID split_memory( PVOID SearchBase, SIZE_T SearchSize, const void* Pattern, SIZE_T PatternSize )
+	void* split_memory( void* SearchBase, SIZE_T SearchSize, const void* Pattern, SIZE_T PatternSize )
 	{
 		const UCHAR* searchBase = static_cast< const UCHAR* >( SearchBase );
 		const UCHAR* pattern = static_cast< const UCHAR* >( Pattern );
@@ -74,7 +74,7 @@ namespace pml4
 		return STATUS_NOT_FOUND;
 	}
 
-	uintptr_t dirbase_from_base_address( void* base )
+	std::uint64_t dirbase_from_base_address( void* base )
 	{
 		if ( !NT_SUCCESS( InitializeMmPfnDatabase( ) ) )
 			return 0;
@@ -92,11 +92,11 @@ namespace pml4
 			if ( !elem->BaseAddress.QuadPart || !elem->NumberOfBytes.QuadPart )
 				break;
 
-			uintptr_t current_phys_address = elem->BaseAddress.QuadPart;
+			std::uint64_t current_phys_address = elem->BaseAddress.QuadPart;
 
 			for ( int j = 0; j < ( elem->NumberOfBytes.QuadPart / 0x1000 ); j++, current_phys_address += 0x1000 ) {
 
-				_MMPFN* pnfinfo = ( _MMPFN* ) ( ( uintptr_t ) g_mmonp_MmPfnDatabase + ( current_phys_address >> 12 ) * sizeof( _MMPFN ) );
+				_MMPFN* pnfinfo = ( _MMPFN* ) ( ( std::uint64_t ) g_mmonp_MmPfnDatabase + ( current_phys_address >> 12 ) * sizeof( _MMPFN ) );
 
 				if ( pnfinfo->u4.PteFrame == ( current_phys_address >> 12 ) ) {
 					MMPTE pml4e{};

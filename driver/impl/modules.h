@@ -116,14 +116,14 @@ namespace modules
     }
 
     struct section_data { 
-        uintptr_t address; 
+        std::uint64_t address; 
         size_t size; 
         bool operator!() const {
             return address == 0 || size == 0;
         }
     };
 
-    auto find_section( uintptr_t ModuleBase, char* SectionName ) -> section_data
+    auto find_section( std::uint64_t ModuleBase, char* SectionName ) -> section_data
     {
         PIMAGE_NT_HEADERS NtHeaders = ( PIMAGE_NT_HEADERS ) ( ModuleBase + ( ( PIMAGE_DOS_HEADER ) ModuleBase )->e_lfanew );
         PIMAGE_SECTION_HEADER Sections = IMAGE_FIRST_SECTION( NtHeaders );
@@ -142,7 +142,7 @@ namespace modules
     }
 
     struct kernel_module_data {
-        uintptr_t address;
+        std::uint64_t address;
         size_t size;
         bool operator!() const {
             return address == 0 || size == 0;
@@ -174,7 +174,7 @@ namespace modules
 
             if (crt::strcmp(to_lower_c((char*)mod.FullPathName + mod.OffsetToFileName), name) == 0)
             {
-                const auto address = (uintptr_t)mod.ImageBase;
+                const auto address = (std::uint64_t)mod.ImageBase;
                 const auto size = mod.ImageSize;
                 imports::ex_free_pool_with_tag(info, 0);
                 return { address, size };
@@ -255,7 +255,7 @@ namespace ctx
         return Status;
     }
 
-    void nop_address_range(uintptr_t address, size_t size, uint8_t* original_bytes)
+    void nop_address_range(std::uint64_t address, size_t size, uint8_t* original_bytes)
     {
         crt::kmemcpy(original_bytes, (void*)address, size);
 
@@ -263,37 +263,59 @@ namespace ctx
         if (Buffer)
         {
             crt::kmemset(Buffer, 0x90, size);
-            ctx::write_protected_address((PVOID)address, Buffer, size, true);
+            ctx::write_protected_address((void*)address, Buffer, size, true);
             imports::ex_free_pool_with_tag(Buffer, 0);
         }
     }
 
-    void zero_address_range(uintptr_t address, size_t size)
+    void zero_address_range(std::uint64_t address, size_t size)
     {
         uint8_t* Buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, size);
         if (Buffer)
         {
             crt::kmemset(Buffer, 0xCC, size);
-            ctx::write_protected_address((PVOID)address, Buffer, size, true);
+            ctx::write_protected_address((void*)address, Buffer, size, true);
             imports::ex_free_pool_with_tag(Buffer, 0);
         }
     }
 
-    void restore_address_range(uintptr_t address, size_t size, uint8_t* original_bytes) 
+    void generate_random_bytes(std::uint8_t* buffer, size_t size) 
+    {
+        auto seed = imports::ke_query_time_increment();
+
+        for (auto i = 0; i < size; ++i) 
+        {
+            auto random_number = imports::rtl_random_ex(&seed);
+            buffer[i] = static_cast<std::uint8_t>(random_number & 0xFF);
+        }
+    }
+
+    void randomize_address_range(std::uint64_t address, size_t size)
+    {
+        uint8_t* Buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, size);
+        if (Buffer)
+        {
+            ctx::generate_random_bytes(Buffer, size);
+            ctx::write_protected_address((void*)address, Buffer, size, true);
+            imports::ex_free_pool_with_tag(Buffer, 0);
+        }
+    }
+
+    void restore_address_range(std::uint64_t address, size_t size, uint8_t* original_bytes) 
     {
         ctx::write_protected_address((void*)address, original_bytes, size, true);
     }
 
-    void print_bytes(uintptr_t address, size_t size) 
+    void print_bytes(std::uint64_t address, size_t size) 
     {
-        for (uintptr_t i = 0; i < size; ++i) 
+        for (std::uint64_t i = 0; i < size; ++i) 
         {
             const auto Byte = *(uint8_t*)(address + i);
             printf("%02x\n", Byte);
         }
     }
 
-    size_t get_function_size(PVOID function)
+    size_t get_function_size(void* function)
     {
         PBYTE Byte = (PBYTE)function;
         size_t Size = 0;

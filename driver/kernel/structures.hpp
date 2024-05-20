@@ -10,7 +10,7 @@
 #endif
 
 #define PFN_TO_PAGE(pfn) ( pfn << 12 )
-#define dereference(ptr) (const uintptr_t)(ptr + *( int * )( ( BYTE * )ptr + 3 ) + 7)
+#define dereference(ptr) (const std::uint64_t)(ptr + *( int * )( ( std::uint8_t * )ptr + 3 ) + 7)
 #define in_range(x,a,b)    (x >= a && x <= b) 
 #define get_bits( x )    (in_range((x&(~0x20)),'A','F') ? ((x&(~0x20)) - 'A' + 0xA) : (in_range(x,'0','9') ? x - '0' : 0))
 #define get_byte( x )    (get_bits(x[0]) << 4 | get_bits(x[1]))
@@ -69,29 +69,29 @@ typedef struct _RELOC_ENTRY
 typedef struct _KLDR_DATA_TABLE_ENTRY
 {
 	LIST_ENTRY InLoadOrderLinks;
-	PVOID ExceptionTable;
+	void* ExceptionTable;
 	ULONG ExceptionTableSize;
-	PVOID GpValue;
+	void* GpValue;
 	PNON_PAGED_DEBUG_INFO NonPagedDebugInfo;
-	PVOID DllBase;
-	PVOID EntryPoint;
+	void* DllBase;
+	void* EntryPoint;
 	ULONG SizeOfImage;
 	UNICODE_STRING FullDllName;
 	UNICODE_STRING BaseDllName;
 	ULONG Flags;
 	USHORT LoadCount;
 	USHORT __Unused5;
-	PVOID SectionPointer;
+	void* SectionPointer;
 	ULONG CheckSum;
-	PVOID LoadedImports;
-	PVOID PatchInformation;
+	void* LoadedImports;
+	void* PatchInformation;
 } KLDR_DATA_TABLE_ENTRY, * PKLDR_DATA_TABLE_ENTRY;
 
 typedef struct _RTL_PROCESS_MODULE_INFORMATION
 {
 	HANDLE Section;
-	PVOID MappedBase;
-	PVOID ImageBase;
+	void* MappedBase;
+	void* ImageBase;
 	ULONG ImageSize;
 	ULONG Flags;
 	USHORT LoadOrderIndex;
@@ -111,8 +111,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY {
 	LIST_ENTRY InLoadOrderModuleList;
 	LIST_ENTRY InMemoryOrderModuleList;
 	LIST_ENTRY InInitializationOrderModuleList;
-	PVOID DllBase;
-	PVOID EntryPoint;
+	void* DllBase;
+	void* EntryPoint;
 	ULONG SizeOfImage;
 	UNICODE_STRING FullDllName;
 	UNICODE_STRING BaseDllName;
@@ -120,7 +120,7 @@ typedef struct _LDR_DATA_TABLE_ENTRY {
 	USHORT LoadCount;
 	USHORT TlsIndex;
 	LIST_ENTRY HashLinks;
-	PVOID SectionPointer;
+	void* SectionPointer;
 	ULONG CheckSum;
 	ULONG TimeDateStamp;
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
@@ -130,15 +130,15 @@ typedef struct _RTL_CRITICAL_SECTION
 	VOID* DebugInfo;
 	LONG LockCount;
 	LONG RecursionCount;
-	PVOID OwningThread;
-	PVOID LockSemaphore;
+	void* OwningThread;
+	void* LockSemaphore;
 	ULONG SpinCount;
 } RTL_CRITICAL_SECTION, * PRTL_CRITICAL_SECTION;
 
 typedef struct _PEB_LDR_DATA {
 	ULONG Length;
 	BOOLEAN Initialized;
-	PVOID SsHandle;
+	void* SsHandle;
 	LIST_ENTRY ModuleListLoadOrder;
 	LIST_ENTRY ModuleListMemoryOrder;
 	LIST_ENTRY ModuleListInitOrder;
@@ -155,36 +155,36 @@ typedef struct _PEB
 	ULONG IsLegacyProcess : 1;
 	ULONG IsImageDynamicallyRelocated : 1;
 	ULONG SpareBits : 4;
-	PVOID Mutant;
-	PVOID ImageBaseAddress;
+	void* Mutant;
+	void* ImageBaseAddress;
 	PPEB_LDR_DATA Ldr;
 	VOID* ProcessParameters;
-	PVOID SubSystemData;
-	PVOID ProcessHeap;
+	void* SubSystemData;
+	void* ProcessHeap;
 	PRTL_CRITICAL_SECTION FastPebLock;
-	PVOID AtlThunkSListPtr;
-	PVOID IFEOKey;
+	void* AtlThunkSListPtr;
+	void* IFEOKey;
 	ULONG CrossProcessFlags;
 	ULONG ProcessInJob : 1;
 	ULONG ProcessInitializing : 1;
 	ULONG ReservedBits0 : 30;
 	union
 	{
-		PVOID KernelCallbackTable;
-		PVOID UserSharedInfoPtr;
+		void* KernelCallbackTable;
+		void* UserSharedInfoPtr;
 	};
 	ULONG SystemReserved[1];
 	ULONG SpareUlong;
 	VOID* FreeList;
 	ULONG TlsExpansionCounter;
-	PVOID TlsBitmap;
+	void* TlsBitmap;
 	ULONG TlsBitmapBits[2];
-	PVOID ReadOnlySharedMemoryBase;
-	PVOID HotpatchInformation;
+	void* ReadOnlySharedMemoryBase;
+	void* HotpatchInformation;
 	VOID** ReadOnlyStaticServerData;
-	PVOID AnsiCodePageData;
-	PVOID OemCodePageData;
-	PVOID UnicodeCaseTableData;
+	void* AnsiCodePageData;
+	void* OemCodePageData;
+	void* UnicodeCaseTableData;
 	ULONG NumberOfProcessors;
 	ULONG NtGlobalFlag;
 	LARGE_INTEGER CriticalSectionTimeout;
@@ -195,8 +195,8 @@ typedef struct _PEB
 	ULONG NumberOfHeaps;
 	ULONG MaximumNumberOfHeaps;
 	VOID** ProcessHeaps;
-	PVOID GdiSharedHandleTable;
-	PVOID ProcessStarterHelper;
+	void* GdiSharedHandleTable;
+	void* ProcessStarterHelper;
 	ULONG GdiDCAttributeList;
 	PRTL_CRITICAL_SECTION LoaderLock;
 	ULONG OSMajorVersion;
@@ -209,14 +209,14 @@ typedef struct _PEB
 	ULONG ImageSubsystemMinorVersion;
 	ULONG ImageProcessAffinityMask;
 	ULONG GdiHandleBuffer[34];
-	PVOID PostProcessInitRoutine;
-	PVOID TlsExpansionBitmap;
+	void* PostProcessInitRoutine;
+	void* TlsExpansionBitmap;
 	ULONG TlsExpansionBitmapBits[32];
 	ULONG SessionId;
 	ULARGE_INTEGER AppCompatFlags;
 	ULARGE_INTEGER AppCompatFlagsUser;
-	PVOID pShimData;
-	PVOID AppCompatInfo;
+	void* pShimData;
+	void* AppCompatInfo;
 	UNICODE_STRING CSDVersion;
 	VOID* ActivationContextData;
 	VOID* ProcessAssemblyStorageMap;
@@ -225,11 +225,11 @@ typedef struct _PEB
 	ULONG MinimumStackCommit;
 	VOID* FlsCallback;
 	LIST_ENTRY FlsListHead;
-	PVOID FlsBitmap;
+	void* FlsBitmap;
 	ULONG FlsBitmapBits[4];
 	ULONG FlsHighIndex;
-	PVOID WerRegistrationData;
-	PVOID WerShipAssertPtr;
+	void* WerRegistrationData;
+	void* WerShipAssertPtr;
 } PEB, * PPEB;
 
 
@@ -238,12 +238,12 @@ typedef union _virt_addr_t
 	void* value;
 	struct
 	{
-		uintptr_t offset : 12;
-		uintptr_t pt_index : 9;
-		uintptr_t pd_index : 9;
-		uintptr_t pdpt_index : 9;
-		uintptr_t pml4_index : 9;
-		uintptr_t reserved : 16;
+		std::uint64_t offset : 12;
+		std::uint64_t pt_index : 9;
+		std::uint64_t pd_index : 9;
+		std::uint64_t pdpt_index : 9;
+		std::uint64_t pml4_index : 9;
+		std::uint64_t reserved : 16;
 	};
 } virt_addr_t, * pvirt_addr_t;
 typedef enum _SYSTEM_INFORMATION_CLASS
@@ -650,7 +650,7 @@ typedef union _PTE {
 typedef struct _IO_CLIENT_EXTENSION
 {
 	struct _IO_CLIENT_EXTENSION* NextExtension;
-	PVOID ClientIdentificationAddress;
+	void* ClientIdentificationAddress;
 } IO_CLIENT_EXTENSION, * PIO_CLIENT_EXTENSION;
 
 typedef struct _EXTENDED_DRIVER_EXTENSION
@@ -668,7 +668,7 @@ NTSTATUS
 EXDRIVER_INITIALIZE(
 	_In_ struct _DRIVER_OBJECT* DriverObject,
 	_In_ PUNICODE_STRING RegistryPath,
-	_In_ PVOID Parameter
+	_In_ void* Parameter
 );
 
 typedef EXDRIVER_INITIALIZE* PEXDRIVER_INITIALIZE;
