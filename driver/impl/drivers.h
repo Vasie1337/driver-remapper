@@ -12,10 +12,8 @@ namespace drivers
 
     NTSTATUS __fastcall create_driver(
         _In_opt_ PUNICODE_STRING DriverName,
-        _In_ PEXDRIVER_INITIALIZE InitializationFunction,
-        _In_opt_ void* Parameter)
-
-
+        _In_ PDRIVER_INITIALIZE InitializationFunction
+    )
     {
         WCHAR NameBuffer[100];
         USHORT NameLength;
@@ -151,7 +149,7 @@ namespace drivers
         }
 
         /* Finally, call its init function */
-        Status = InitializationFunction(DriverObject, NULL, Parameter);
+        Status = InitializationFunction(DriverObject, NULL);
         if (!NT_SUCCESS(Status))
         {
             /* If it didn't work, then kill the object */

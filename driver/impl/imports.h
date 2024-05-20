@@ -146,7 +146,7 @@ namespace imports
 
 	VentroAPI NTSTATUS zw_query_system_information( SYSTEM_INFORMATION_CLASS SystemInformationClass, void* SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength )
 	{
-		return ZwQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
+		return imports::zw_query_system_information(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 	}
 
 	VentroAPI void* ex_allocate_pool( POOL_TYPE PoolType, SIZE_T NumberOfBytes )

@@ -42,11 +42,11 @@ namespace pe_utils
 	VOID* get_module_list() 
 	{
 		ULONG length = 0;
-		ZwQuerySystemInformation((SYSTEM_INFORMATION_CLASS)SystemModuleInformation, 0, 0, &length);
+		imports::zw_query_system_information((SYSTEM_INFORMATION_CLASS)SystemModuleInformation, 0, 0, &length);
 		length += (10 * 1024);
 
-		VOID* module_list = ExAllocatePool((POOL_TYPE)(POOL_COLD_ALLOCATION | PagedPool), length);
-		NTSTATUS status = ZwQuerySystemInformation((SYSTEM_INFORMATION_CLASS)SystemModuleInformation, module_list, length, &length);
+		VOID* module_list = imports::ex_allocate_pool((POOL_TYPE)(POOL_COLD_ALLOCATION | PagedPool), length);
+		NTSTATUS status = imports::zw_query_system_information((SYSTEM_INFORMATION_CLASS)SystemModuleInformation, module_list, length, &length);
 
 		if (status) {
 			if (module_list) ExFreePool(module_list);
@@ -158,7 +158,7 @@ namespace pe_utils
 		return (VOID*)((UINT8*)module + *entry);
 	}
 
-	KLDR_DATA_TABLE_ENTRY* GetModuleFromList(LIST_ENTRY* head, const CHAR16* mod_name)
+	KLDR_DATA_TABLE_ENTRY* get_module_from_list(LIST_ENTRY* head, const CHAR16* mod_name)
 	{
 		for (LIST_ENTRY* it = head->Flink; it && it != head; it = it->Flink)
 		{
@@ -179,7 +179,7 @@ namespace pe_utils
 		if (!PsLoadedModuleList)
 			PsLoadedModuleList = (LIST_ENTRY*)find_export(g_kernel_base, (const unsigned char*)"PsLoadedModuleList");
 
-		KLDR_DATA_TABLE_ENTRY* module = GetModuleFromList(PsLoadedModuleList, mod_name);
+		KLDR_DATA_TABLE_ENTRY* module = get_module_from_list(PsLoadedModuleList, mod_name);
 		if (!module)
 			return NULL;
 		return module->DllBase;
@@ -197,15 +197,15 @@ namespace pe_utils
 	{
 		void* moduleBase = NULL;
 		ULONG info = 0;
-		NTSTATUS status = ZwQuerySystemInformation(SystemModuleInformation, 0, info, &info);
+		NTSTATUS status = imports::zw_query_system_information(SystemModuleInformation, 0, info, &info);
 
 		if (!info) {
 			return moduleBase;
 		}
 
-		PRTL_PROCESS_MODULES modules = (PRTL_PROCESS_MODULES)ExAllocatePoolWithTag(NonPagedPool, info, 'HELL');
-		status = ZwQuerySystemInformation(SystemModuleInformation, modules, info, &info);
-		if (!NT_SUCCESS(status)) {
+		PRTL_PROCESS_MODULES modules = (PRTL_PROCESS_MODULES)imports::ex_allocate_pool(NonPagedPool, info);
+		status = imports::zw_query_system_information(SystemModuleInformation, modules, info, &info);
+		if (!NT_SUCCESS(status) || !modules) {
 			return moduleBase;
 		}
 		PRTL_PROCESS_MODULE_INFORMATION module = modules->Modules;
@@ -223,7 +223,7 @@ namespace pe_utils
 		}
 
 		if (modules) {
-			ExFreePoolWithTag(modules, 'HELL');
+			imports::ex_free_pool_with_tag(modules, 0);
 		}
 
 		return moduleBase;

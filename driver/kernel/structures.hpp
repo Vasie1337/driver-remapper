@@ -232,7 +232,6 @@ typedef struct _PEB
 	void* WerShipAssertPtr;
 } PEB, * PPEB;
 
-
 typedef union _virt_addr_t
 {
 	void* value;
@@ -662,14 +661,3 @@ typedef struct _EXTENDED_DRIVER_EXTENSION
 	PIO_CLIENT_EXTENSION ClientDriverExtension;
 	PFS_FILTER_CALLBACKS FsFilterCallbacks;
 } EXTENDED_DRIVER_EXTENSION, * PEXTENDED_DRIVER_EXTENSION;
-
-typedef
-NTSTATUS
-EXDRIVER_INITIALIZE(
-	_In_ struct _DRIVER_OBJECT* DriverObject,
-	_In_ PUNICODE_STRING RegistryPath,
-	_In_ void* Parameter
-);
-
-typedef EXDRIVER_INITIALIZE* PEXDRIVER_INITIALIZE;
-

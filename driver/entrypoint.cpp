@@ -24,14 +24,15 @@
 
 modules::section_data text_section = modules::section_data();
 
-NTSTATUS map_new_driver()
+static NTSTATUS map_new_driver()
 {
 	printf("Mapping driver...\n");
 
 	const auto dos_headers = reinterpret_cast<PIMAGE_DOS_HEADER>(raw_driver_bytes);
 	const auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(raw_driver_bytes + dos_headers->e_lfanew);
 
-	const auto driver_size = nt_headers->OptionalHeader.SizeOfImage;
+	auto driver_size = nt_headers->OptionalHeader.SizeOfImage;
+
 	if (driver_size > text_section.size)
 	{
 		printf("\rDriver size too big.\n");
@@ -39,15 +40,15 @@ NTSTATUS map_new_driver()
 	}
 	printf("\rDriver size: 0x%lx\n", driver_size);
 
-	auto local_driver_base = reinterpret_cast<std::uint64_t>(imports::ex_allocate_pool(NonPagedPool, driver_size));
-	if (!local_driver_base)
+	auto local_image_base = reinterpret_cast<std::uint64_t>(imports::ex_allocate_pool(NonPagedPool, driver_size));
+	if (!local_image_base)
 	{
 		printf("\rFailed to allocate local driver base.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
-	printf("\rLocal driver base: 0x%llx\n", local_driver_base);
+	printf("\rLocal driver base: 0x%llx\n", local_image_base);
 
-	crt::kmemcpy(reinterpret_cast<void*>(local_driver_base), raw_driver_bytes, sizeof(raw_driver_bytes));
+	crt::kmemcpy(reinterpret_cast<void*>(local_image_base), raw_driver_bytes, sizeof(raw_driver_bytes));
 	
 	const auto current_image_section = IMAGE_FIRST_SECTION(nt_headers);
 
@@ -57,26 +58,31 @@ NTSTATUS map_new_driver()
 			continue;
 
 		crt::kmemcpy(
-			reinterpret_cast<void*>(local_driver_base + current_image_section[i].VirtualAddress),
+			reinterpret_cast<void*>(local_image_base + current_image_section[i].VirtualAddress),
 			raw_driver_bytes + current_image_section[i].PointerToRawData,
 			current_image_section[i].SizeOfRawData
 		);
 	}
 
-	mapper::resolve_relocs(local_driver_base, nt_headers);
+	mapper::resolve_relocs(local_image_base, nt_headers);
 	printf("\rResolved relocations.\n");
 
-	mapper::resolve_imports(local_driver_base, nt_headers);
+	mapper::resolve_imports(local_image_base, nt_headers);
 	printf("\rResolved imports.\n");
 
-	mapper::unload_discardable_sections(local_driver_base, nt_headers);
+	mapper::unload_discardable_sections(local_image_base, nt_headers);
 	printf("\rUnloaded discardable sections.\n");
 
-	ctx::write_protected_address(reinterpret_cast<void*>(text_section.address), (void*)local_driver_base, driver_size, true);
+	ctx::write_protected_address(
+		reinterpret_cast<void*>(text_section.address), 
+		reinterpret_cast<void*>(local_image_base),
+		driver_size, 
+		true
+	);
 	printf("\rPatched driver to target.\n");
 
-	crt::kmemset(reinterpret_cast<void*>(local_driver_base), 0xcc, driver_size);
-	imports::ex_free_pool_with_tag(reinterpret_cast<void*>(local_driver_base), 0);
+	crt::kmemset(reinterpret_cast<void*>(local_image_base), 0xcc, driver_size);
+	imports::ex_free_pool_with_tag(reinterpret_cast<void*>(local_image_base), 0);
 	
 	printf("\rCalling entry...\n");
 
