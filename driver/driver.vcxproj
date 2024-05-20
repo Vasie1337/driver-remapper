@@ -23,6 +23,7 @@
     <ClInclude Include="impl\data.h" />
     <ClInclude Include="impl\drivers.h" />
     <ClInclude Include="impl\mapper.h" />
+    <ClInclude Include="impl\pe_utils64.h" />
     <ClInclude Include="requests\physical\pml4_walk_entry.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>

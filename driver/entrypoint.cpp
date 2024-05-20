@@ -17,30 +17,13 @@
 #include <impl/modules.h>
 #include <impl/drivers.h>
 #include <impl/data.h>
+#include <impl/pe_utils64.h>
 #include <impl/mapper.h>
 
 #define PATCH_LENTH 5
 
 modules::section_data text_section = modules::section_data();
 modules::section_data data_section = modules::section_data();
-
-typedef struct _RELOC_NAME_TABLE_ENTRY
-{
-	UINT16 Hint;
-	char8_t Name[];
-} RELOC_NAME_TABLE_ENTRY, PRELOC_NAME_TABLE_ENTRY;
-
-typedef struct _RELOC_BLOCK_HDR
-{
-	UINT32 PageRVA;
-	UINT32 BlockSize;
-} RELOC_BLOCK_HDR, * PRELOC_BLOCK_HDR;
-
-typedef struct _RELOC_ENTRY
-{
-	UINT16 Offset : 12;
-	UINT16 Type : 4;
-} RELOC_ENTRY, * PRELOC_ENTRY;
 
 NTSTATUS map_new_driver()
 {
@@ -61,35 +44,25 @@ NTSTATUS map_new_driver()
 	const auto dos_headers = reinterpret_cast<PIMAGE_DOS_HEADER>(local_driver_base);
 	const auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(local_driver_base + dos_headers->e_lfanew);
 	
-	PIMAGE_SECTION_HEADER sec_hdr = (PIMAGE_SECTION_HEADER)((BYTE*)(&nt_headers->FileHeader) + sizeof(IMAGE_FILE_HEADER) + nt_headers->FileHeader.SizeOfOptionalHeader);
-	for (int i = 0; i < nt_headers->FileHeader.NumberOfSections; i++, sec_hdr++) {
-		crt::kmemcpy((void*)(local_driver_base + sec_hdr->VirtualAddress), raw_driver_bytes + sec_hdr->PointerToRawData, sec_hdr->SizeOfRawData);
-	}
-	
-	mapper::resolve_imports(local_driver_base);
-	
-	INT64 load_delta = (INT64)(local_driver_base - nt_headers->OptionalHeader.ImageBase);
-	PIMAGE_DATA_DIRECTORY reloc = &nt_headers->OptionalHeader.DataDirectory[5];
-	for (PRELOC_BLOCK_HDR i = (PRELOC_BLOCK_HDR)(local_driver_base + reloc->VirtualAddress); i < (PRELOC_BLOCK_HDR)(local_driver_base + reloc->VirtualAddress + reloc->Size); *(BYTE**)&i += i->BlockSize)
-		for (PRELOC_ENTRY entry = (PRELOC_ENTRY)i + 4; (BYTE*)entry < (BYTE*)i + i->BlockSize; ++entry)
-			if (entry->Type == 0xA)
-				*(UINT64*)(local_driver_base + i->PageRVA + entry->Offset) += load_delta;
-	
-	sec_hdr = (PIMAGE_SECTION_HEADER)((BYTE*)(&nt_headers->FileHeader) + sizeof(IMAGE_FILE_HEADER) + nt_headers->FileHeader.SizeOfOptionalHeader);
-	for (int i = 0; i < nt_headers->FileHeader.NumberOfSections; i++, sec_hdr++)
-		if (sec_hdr->Characteristics & 0x02000000)
-			memset((void*)(local_driver_base + sec_hdr->VirtualAddress), 0x00, sec_hdr->SizeOfRawData);
-	
-	if (!nt_headers->OptionalHeader.AddressOfEntryPoint)
-		return STATUS_UNSUCCESSFUL;
-
-	printf("Size: %i\n", nt_headers->OptionalHeader.SizeOfImage);
-
 	if (nt_headers->OptionalHeader.SizeOfImage > size)
 	{
-		printf("Too big driver fat nigga.\n");
+		printf("Driver size too big.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
+
+	PIMAGE_SECTION_HEADER section = (PIMAGE_SECTION_HEADER)((BYTE*)(&nt_headers->FileHeader) + sizeof(IMAGE_FILE_HEADER) + nt_headers->FileHeader.SizeOfOptionalHeader);
+	for (int i = 0; i < nt_headers->FileHeader.NumberOfSections; i++, section++) 
+	{
+		crt::kmemcpy(
+			reinterpret_cast<void*>(local_driver_base + section->VirtualAddress),
+			raw_driver_bytes + section->PointerToRawData, 
+			section->SizeOfRawData
+		);
+	}
+	
+	mapper::resolve_relocs(local_driver_base, nt_headers);
+	mapper::resolve_imports(local_driver_base, nt_headers);
+	mapper::unload_discardable_sections(local_driver_base, nt_headers);
 	
 	ctx::write_protected_address(base, (void*)local_driver_base, nt_headers->OptionalHeader.SizeOfImage, true);
 	

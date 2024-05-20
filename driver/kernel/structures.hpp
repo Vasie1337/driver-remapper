@@ -18,6 +18,54 @@
 #define to_lower_i(Char) ((Char >= 'A' && Char <= 'Z') ? (Char + 32) : Char)
 #define to_lower_c(Char) ((Char >= (char*)'A' && Char <= (char*)'Z') ? (Char + 32) : Char)
 
+typedef unsigned char CHAR8;
+typedef unsigned short CHAR16;
+
+typedef struct _IMAGE_IMPORT_DESCRIPTOR2 {
+	UINT32   LookupTableRVA;             // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
+	UINT32   TimeDateStamp;                  // 0 if not bound,
+	// -1 if bound, and real date\time stamp
+	//     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
+	// O.W. date/time stamp of DLL bound to (Old BIND)
+
+	UINT32   ForwarderChain;                 // -1 if no forwarders
+	UINT32   Name;
+	UINT32   ImportAddressTable;                     // RVA to IAT (if bound this IAT has actual addresses)
+} IMAGE_IMPORT_DESCRIPTOR2;
+
+typedef IMAGE_IMPORT_DESCRIPTOR2* PIMAGE_IMPORT_DESCRIPTOR2;
+
+typedef struct _IMAGE_IMPORT_DESCRIPTOR_OWN {
+	UINT32   LookupTableRVA;             // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
+	UINT32   TimeDateStamp;                  // 0 if not bound,
+	// -1 if bound, and real date\time stamp
+	//     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
+	// O.W. date/time stamp of DLL bound to (Old BIND)
+
+	UINT32   ForwarderChain;                 // -1 if no forwarders
+	UINT32   Name;
+	UINT32   ImportAddressTable;                     // RVA to IAT (if bound this IAT has actual addresses)
+} IMAGE_IMPORT_DESCRIPTOR_OWN;
+
+typedef IMAGE_IMPORT_DESCRIPTOR_OWN* PIMAGE_IMPORT_DESCRIPTOR_OWN;
+typedef struct _RELOC_NAME_TABLE_ENTRY
+{
+	UINT16 Hint;
+	CHAR8 Name[];
+} RELOC_NAME_TABLE_ENTRY, PRELOC_NAME_TABLE_ENTRY;
+
+typedef struct _RELOC_BLOCK_HDR
+{
+	UINT32 PageRVA;
+	UINT32 BlockSize;
+} RELOC_BLOCK_HDR, * PRELOC_BLOCK_HDR;
+
+typedef struct _RELOC_ENTRY
+{
+	UINT16 Offset : 12;
+	UINT16 Type : 4;
+} RELOC_ENTRY, * PRELOC_ENTRY;
+
 typedef struct _KLDR_DATA_TABLE_ENTRY
 {
 	LIST_ENTRY InLoadOrderLinks;

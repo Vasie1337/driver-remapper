@@ -1,111 +1,41 @@
 #pragma once
 namespace mapper
 {
-	PIMAGE_SECTION_HEADER translate_raw_section(PIMAGE_NT_HEADERS nt, DWORD rva)
+	void resolve_relocs(uintptr_t imageBase, PIMAGE_NT_HEADERS nt_headers)
 	{
-		auto section = IMAGE_FIRST_SECTION(nt);
-		for (auto i = 0; i < nt->FileHeader.NumberOfSections; ++i, ++section)
-		{
-			if (rva >= section->VirtualAddress && rva < section->VirtualAddress + section->Misc.VirtualSize)
-			{
-				return section;
-			}
-		}
-
-		return NULL;
+		INT64 load_delta = (INT64)(imageBase - nt_headers->OptionalHeader.ImageBase);
+		PIMAGE_DATA_DIRECTORY reloc = &nt_headers->OptionalHeader.DataDirectory[5];
+		for (PRELOC_BLOCK_HDR i = (PRELOC_BLOCK_HDR)(imageBase + reloc->VirtualAddress); i < (PRELOC_BLOCK_HDR)(imageBase + reloc->VirtualAddress + reloc->Size); *(BYTE**)&i += i->BlockSize)
+			for (PRELOC_ENTRY entry = (PRELOC_ENTRY)i + 4; (BYTE*)entry < (BYTE*)i + i->BlockSize; ++entry)
+				if (entry->Type == 0xA)
+					*(UINT64*)(imageBase + i->PageRVA + entry->Offset) += load_delta;
 	}
 
-	PVOID translate_raw(PBYTE base, PIMAGE_NT_HEADERS nt, DWORD rva)
+	void resolve_imports(uintptr_t imageBase, PIMAGE_NT_HEADERS nt_headers)
 	{
-		auto section = translate_raw_section(nt, rva);
-		if (!section)
+		PIMAGE_DATA_DIRECTORY import_dir = &nt_headers->OptionalHeader.DataDirectory[1];
+		for (PIMAGE_IMPORT_DESCRIPTOR2 desc = (PIMAGE_IMPORT_DESCRIPTOR2)(imageBase + import_dir->VirtualAddress); desc->LookupTableRVA; ++desc)
 		{
-			return NULL;
-		}
-
-		return base + section->PointerToRawData + (rva - section->VirtualAddress);
-	}
-
-	void resolve_relocs(uintptr_t imageBase, uintptr_t newBase, uintptr_t delta)
-	{
-		const auto dosHeaders = reinterpret_cast<PIMAGE_DOS_HEADER>(imageBase);
-		const auto ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS64>(imageBase + dosHeaders->e_lfanew);
-
-		DWORD reloc_va = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
-
-		if (!reloc_va)
-			return;
-
-		auto current_base_relocation = reinterpret_cast<PIMAGE_BASE_RELOCATION>(newBase + reloc_va);
-		const auto reloc_end = reinterpret_cast<uint64_t>(current_base_relocation) + ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
-
-		while (current_base_relocation->VirtualAddress && current_base_relocation->VirtualAddress < reloc_end && current_base_relocation->SizeOfBlock)
-		{
-			uint64_t current_reloc_address = newBase + current_base_relocation->VirtualAddress;
-			uint16_t* current_reloc_item = reinterpret_cast<uint16_t*>(reinterpret_cast<uint64_t>(current_base_relocation) + sizeof(IMAGE_BASE_RELOCATION));
-			uint32_t current_reloc_count = (current_base_relocation->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(uint16_t);
-
-			for (auto i = 0u; i < current_reloc_count; ++i)
+			CHAR16 buffer[260];
+			CHAR8* mod_name = (CHAR8*)(imageBase + desc->Name);
+			for (int i = 0; i < 259 && mod_name[i]; ++i)
+				buffer[i] = (CHAR16)mod_name[i], buffer[i + 1] = L'\0';
+			PVOID module_base = pe_utils::get_loaded_module_base(buffer);
+			for (UINT64* lookup_entry = (UINT64*)(imageBase + desc->LookupTableRVA), *iat_entry = (UINT64*)(imageBase + desc->ImportAddressTable); *lookup_entry; ++lookup_entry, ++iat_entry)
 			{
-				const uint16_t type = current_reloc_item[i] >> 12;
-				const uint16_t offset = current_reloc_item[i] & 0xFFF;
-
-				if (type == IMAGE_REL_BASED_DIR64)
-					*reinterpret_cast<uint64_t*>(current_reloc_address + offset) += delta;
+				if (*lookup_entry & (1ull << 63))
+					*(PVOID*)iat_entry = pe_utils::find_export_by_ordinal(module_base, *lookup_entry & 0xFFFF);
+				else
+					*(PVOID*)iat_entry = pe_utils::find_export(module_base, ((RELOC_NAME_TABLE_ENTRY*)(imageBase + (*lookup_entry & 0x7FFFFFFF)))->Name);
 			}
-
-			current_base_relocation = reinterpret_cast<PIMAGE_BASE_RELOCATION>(reinterpret_cast<uint64_t>(current_base_relocation) + current_base_relocation->SizeOfBlock);
 		}
 	}
 
-	BOOLEAN resolve_imports(uintptr_t imageBase)
+	void unload_discardable_sections(uintptr_t imageBase, PIMAGE_NT_HEADERS nt_headers)
 	{
-		const auto dosHeaders = reinterpret_cast<PIMAGE_DOS_HEADER>(imageBase);
-		const auto ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS64>(imageBase + dosHeaders->e_lfanew);
-
-		auto rva = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
-		if (!rva)
-		{
-			return TRUE;
-		}
-
-		auto importDescriptor = reinterpret_cast<PIMAGE_IMPORT_DESCRIPTOR>(translate_raw(reinterpret_cast<PBYTE>(imageBase), ntHeaders, rva));
-		if (!importDescriptor)
-		{
-			return TRUE;
-		}
-
-		for (; importDescriptor->FirstThunk; ++importDescriptor)
-		{
-			auto moduleName = reinterpret_cast<PCHAR>(translate_raw(reinterpret_cast<PBYTE>(imageBase), ntHeaders, importDescriptor->Name));
-			if (!moduleName)
-			{
-				break;
-			}
-
-
-			auto modinfo = modules::get_kernel_module(moduleName);
-
-			if (!modinfo)
-			{
-				return FALSE;
-			}
-
-			for (auto thunk = reinterpret_cast<PIMAGE_THUNK_DATA>(translate_raw(reinterpret_cast<PBYTE>(imageBase), ntHeaders, importDescriptor->FirstThunk)); thunk->u1.AddressOfData; ++thunk)
-			{
-				auto importByName = reinterpret_cast<PIMAGE_IMPORT_BY_NAME>(translate_raw(reinterpret_cast<PBYTE>(imageBase), ntHeaders, static_cast<DWORD>(thunk->u1.AddressOfData)));
-
-				uintptr_t funcPtr = reinterpret_cast<uintptr_t>(imports::rtl_find_exported_routine_by_name(reinterpret_cast<PVOID>(modinfo.address), importByName->Name));
-
-				if (!funcPtr)
-				{
-					return FALSE;
-				}
-
-				thunk->u1.Function = funcPtr;
-			}
-		}
-
-		return TRUE;
+		auto sec_hdr = (PIMAGE_SECTION_HEADER)((BYTE*)(&nt_headers->FileHeader) + sizeof(IMAGE_FILE_HEADER) + nt_headers->FileHeader.SizeOfOptionalHeader);
+		for (int i = 0; i < nt_headers->FileHeader.NumberOfSections; i++, sec_hdr++)
+			if (sec_hdr->Characteristics & 0x02000000)
+				crt::kmemset((void*)(imageBase + sec_hdr->VirtualAddress), 0x00, sec_hdr->SizeOfRawData);
 	}
 }
