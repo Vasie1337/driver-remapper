@@ -4,7 +4,7 @@
 #define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
 
 #ifdef PRINT_DEBUG
-#define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[VasieDrv]: " text), ##__VA_ARGS__)
+#define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[DrvMapper]: " text), ##__VA_ARGS__)
 #else
 #define printf(text, ...) 
 #endif
