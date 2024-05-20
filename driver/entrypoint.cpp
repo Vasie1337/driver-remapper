@@ -102,7 +102,7 @@ NTSTATUS manual_mapped_entry(void* a1, void* a2)
 	}
 	printf("Ntoskrnl base: 0x%llx\n", ntoskrnl.address);
 
-	const auto calldrv_address = scanner::find_pattern(ntoskrnl.address, "\xE8\x00\x00\x00\x00\x44\x8B\xF0\x85\xC0\x78\x15", "x????xxxxxxx");
+	const auto calldrv_address = scanner::find_pattern(ntoskrnl.address, skCrypt("\xE8\x00\x00\x00\x00\x44\x8B\xF0\x85\xC0\x78\x15"), skCrypt("x????xxxxxxx"));
 	if (!calldrv_address)
 	{
 		printf("Invalid pattern.\n");
