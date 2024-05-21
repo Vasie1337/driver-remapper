@@ -91,7 +91,7 @@ namespace request
 		return STATUS_SUCCESS;
 	}
 
-	NTSTATUS resolve_dtb(invoke_data* request)
+	NTSTATUS resolve_dtb(invoke_data* request, PVARS vars)
 	{
 		dtb_invoke data = { 0 };
 
@@ -107,9 +107,9 @@ namespace request
 			return STATUS_UNSUCCESSFUL;
 		}
 
-		physical::m_stored_dtb = pml4::dirbase_from_base_address((void*)imports::ps_get_process_section_base_address(process));
+		vars->m_stored_dtb = pml4::dirbase_from_base_address((void*)imports::ps_get_process_section_base_address(process), vars);
 
-		printf("cr3: %llx\n", physical::m_stored_dtb);
+		printf("cr3: %llx\n", vars->m_stored_dtb);
 
 		imports::obf_dereference_object(process);
 
@@ -118,7 +118,7 @@ namespace request
 		return STATUS_SUCCESS;
 	}
 
-	NTSTATUS read_physical_memory(invoke_data* request)
+	NTSTATUS read_physical_memory(invoke_data* request, PVARS vars)
 	{
 		read_invoke data = { 0 };
 
@@ -127,11 +127,11 @@ namespace request
 			return STATUS_UNSUCCESSFUL;
 		}
 
-		if (!data.address || !data.pid || !data.buffer || !data.size || data.address >= 0x7FFFFFFFFFFF || !physical::m_stored_dtb)
+		if (!data.address || !data.pid || !data.buffer || !data.size || data.address >= 0x7FFFFFFFFFFF || !vars->m_stored_dtb)
 			return STATUS_UNSUCCESSFUL;
 
 		auto physical_address = physical::translate_linear(
-			physical::m_stored_dtb,
+			vars->m_stored_dtb,
 			data.address);
 
 		if (!physical_address)
@@ -157,19 +157,19 @@ namespace request
 		return STATUS_SUCCESS;
 	}
 
-	NTSTATUS write_physical_memory(invoke_data* request) {
+	NTSTATUS write_physical_memory(invoke_data* request, PVARS vars) {
 		write_invoke data = { 0 };
 
 		if (!crt::safe_copy(&data, request->data, sizeof(write_invoke))) {
 			return STATUS_UNSUCCESSFUL;
 		}
 
-		if (!data.address || !data.pid || !data.buffer || !data.size || data.address >= 0x7FFFFFFFFFFF || !physical::m_stored_dtb) {
+		if (!data.address || !data.pid || !data.buffer || !data.size || data.address >= 0x7FFFFFFFFFFF || !vars->m_stored_dtb) {
 			return STATUS_UNSUCCESSFUL;
 		}
 
 		auto physical_address = physical::translate_linear(
-			physical::m_stored_dtb,
+			vars->m_stored_dtb,
 			data.address);
 
 		if (!physical_address) {

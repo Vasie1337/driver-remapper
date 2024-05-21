@@ -7,10 +7,18 @@ namespace mapper
 	{
 		INT64 load_delta = (INT64)(imageBase - nt_headers->OptionalHeader.ImageBase);
 		PIMAGE_DATA_DIRECTORY reloc = &nt_headers->OptionalHeader.DataDirectory[5];
-		for (PRELOC_BLOCK_HDR i = (PRELOC_BLOCK_HDR)(imageBase + reloc->VirtualAddress); i < (PRELOC_BLOCK_HDR)(imageBase + reloc->VirtualAddress + reloc->Size); *(std::uint8_t**)&i += i->BlockSize)
+
+		for (PRELOC_BLOCK_HDR i = (PRELOC_BLOCK_HDR)(imageBase + reloc->VirtualAddress); 
+			i < (PRELOC_BLOCK_HDR)(imageBase + reloc->VirtualAddress + reloc->Size); 
+			*(std::uint8_t**)&i += i->BlockSize
+			)
+		{
 			for (PRELOC_ENTRY entry = (PRELOC_ENTRY)i + 4; (std::uint8_t*)entry < (std::uint8_t*)i + i->BlockSize; ++entry)
+			{
 				if (entry->Type == 0xA)
 					*(UINT64*)(imageBase + i->PageRVA + entry->Offset) += load_delta;
+			}
+		}
 	}
 
 	void resolve_imports(std::uint64_t imageBase, PIMAGE_NT_HEADERS nt_headers)

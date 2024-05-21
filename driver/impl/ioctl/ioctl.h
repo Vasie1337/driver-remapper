@@ -5,15 +5,15 @@ namespace ioctl
 	{
 		UNREFERENCED_PARAMETER(device_object);
 
-		invoke_data* fortnite_request = (invoke_data*)(irp->AssociatedIrp.SystemBuffer);
+		PVARS vars = (PVARS)device_object->DeviceExtension;
 
-		//printf( "code: %llx\n", fortnite_request->code );
+		invoke_data* request = (invoke_data*)(irp->AssociatedIrp.SystemBuffer);
 
-		switch (fortnite_request->code)
+		switch (request->code)
 		{
 		case invoke_resolve_dtb:
 		{
-			if (request::resolve_dtb(fortnite_request) != STATUS_SUCCESS)
+			if (request::resolve_dtb(request, vars) != STATUS_SUCCESS)
 			{
 				irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
 			}
@@ -22,7 +22,7 @@ namespace ioctl
 
 		case invoke_base:
 		{
-			if (request::get_module_base(fortnite_request) != STATUS_SUCCESS)
+			if (request::get_module_base(request) != STATUS_SUCCESS)
 			{
 				irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
 			}
@@ -31,7 +31,7 @@ namespace ioctl
 
 		case invoke_read:
 		{
-			if (request::read_physical_memory(fortnite_request) != STATUS_SUCCESS)
+			if (request::read_physical_memory(request, vars) != STATUS_SUCCESS)
 			{
 				irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
 			}
@@ -40,7 +40,7 @@ namespace ioctl
 
 		case invoke_peb:
 		{
-			if (request::resolve_peb(fortnite_request) != STATUS_SUCCESS)
+			if (request::resolve_peb(request) != STATUS_SUCCESS)
 			{
 				irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
 			}
@@ -49,7 +49,7 @@ namespace ioctl
 
 		case invoke_write:
 		{
-			if (request::write_physical_memory(fortnite_request) != STATUS_SUCCESS)
+			if (request::write_physical_memory(request, vars) != STATUS_SUCCESS)
 			{
 				irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
 			}

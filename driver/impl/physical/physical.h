@@ -1,9 +1,5 @@
 #pragma once
 namespace physical {
-	ULONGLONG m_stored_dtb;
-	PEPROCESS save_process;
-	uint64_t eac_module;
-	uint64_t eac_cr3;
 
 	auto read_physical(
 		std::uintptr_t address,

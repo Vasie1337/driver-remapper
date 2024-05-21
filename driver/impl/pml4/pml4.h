@@ -20,9 +20,7 @@ namespace pml4
 		return nullptr;
 	}
 
-	void* g_mmonp_MmPfnDatabase;
-
-	static NTSTATUS InitializeMmPfnDatabase()
+	static NTSTATUS InitializeMmPfnDatabase(PVARS vars)
 	{
 		struct MmPfnDatabaseSearchPattern
 		{
@@ -59,21 +57,21 @@ namespace pml4
 
 		found += patterns.bytes_size;
 		if (patterns.hard_coded) {
-			g_mmonp_MmPfnDatabase = *reinterpret_cast<void**>(found);
+			vars->g_mmonp_MmPfnDatabase = *reinterpret_cast<void**>(found);
 		}
 		else {
 			const auto mmpfn_address = *reinterpret_cast<ULONG_PTR*>(found);
-			g_mmonp_MmPfnDatabase = *reinterpret_cast<void**>(mmpfn_address);
+			vars->g_mmonp_MmPfnDatabase = *reinterpret_cast<void**>(mmpfn_address);
 		}
 
-		g_mmonp_MmPfnDatabase = PAGE_ALIGN(g_mmonp_MmPfnDatabase);
+		vars->g_mmonp_MmPfnDatabase = PAGE_ALIGN(vars->g_mmonp_MmPfnDatabase);
 
 		return STATUS_SUCCESS;
 	}
 
-	uintptr_t dirbase_from_base_address(void* base)
+	uintptr_t dirbase_from_base_address(void* base, PVARS vars)
 	{
-		if (!NT_SUCCESS(InitializeMmPfnDatabase()))
+		if (!NT_SUCCESS(InitializeMmPfnDatabase(vars)))
 			return 0;
 
 		virt_addr_t virt_base{}; virt_base.value = base;
@@ -93,7 +91,7 @@ namespace pml4
 
 			for (int j = 0; j < (elem->NumberOfBytes.QuadPart / 0x1000); j++, current_phys_address += 0x1000) {
 
-				_MMPFN* pnfinfo = (_MMPFN*)((uintptr_t)g_mmonp_MmPfnDatabase + (current_phys_address >> 12) * sizeof(_MMPFN));
+				_MMPFN* pnfinfo = (_MMPFN*)((uintptr_t)vars->g_mmonp_MmPfnDatabase + (current_phys_address >> 12) * sizeof(_MMPFN));
 
 				if (pnfinfo->u4.PteFrame == (current_phys_address >> 12)) {
 					MMPTE pml4e{};

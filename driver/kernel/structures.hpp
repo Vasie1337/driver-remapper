@@ -1,10 +1,10 @@
 #pragma once
 #include <stdint.h>
 
-//#define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
+#define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
 
 #ifdef PRINT_DEBUG
-#define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[fortnite-kernel-device]: " text), ##__VA_ARGS__)
+#define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[DrvHack]: " text), ##__VA_ARGS__)
 #else
 #define printf(text, ...) 
 #endif
@@ -17,6 +17,12 @@
 #define size_align(Size) ((Size + 0xFFF) & 0xFFFFFFFFFFFFF000)
 #define to_lower_i(Char) ((Char >= 'A' && Char <= 'Z') ? (Char + 32) : Char)
 #define to_lower_c(Char) ((Char >= (char*)'A' && Char <= (char*)'Z') ? (Char + 32) : Char)
+
+typedef struct _VARS
+{
+	ULONGLONG m_stored_dtb;
+	void* g_mmonp_MmPfnDatabase;
+} VARS, * PVARS;
 
 typedef struct _RTL_PROCESS_MODULE_INFORMATION
 {

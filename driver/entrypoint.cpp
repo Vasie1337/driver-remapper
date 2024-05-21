@@ -18,12 +18,14 @@
 #include <impl/requests/requests.h>
 #include <impl/ioctl/ioctl.h>
 
-constexpr auto DEVICE_NAME = L"\\Device\\{67481902-14CD-4FCB-B17F-A7515AD33274}";
-constexpr auto DOS_NAME = L"\\DosDevices\\{67481902-14CD-4FCB-B17F-A7515AD33274}";
+#define DEVICE_NAME L"\\Device\\{67481902-14CD-4FCB-B17F-A7515AD33274}"
+#define DOS_NAME L"\\DosDevices\\{67481902-14CD-4FCB-B17F-A7515AD33274}"
 
 static NTSTATUS driver_entry( PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path )
 {
 	UNREFERENCED_PARAMETER( registry_path );
+
+	printf("Setting up IOCTL...\n");
 
 	UNICODE_STRING Device;
 	UNICODE_STRING DosDevices;
@@ -40,6 +42,8 @@ static NTSTATUS driver_entry( PDRIVER_OBJECT driver_obj, PUNICODE_STRING registr
 		FALSE,
 		&DeviceObject 
 	);
+
+	DeviceObject->DeviceExtension = imports::ex_allocate_pool(NonPagedPool, sizeof(VARS));
 
 	if (NT_SUCCESS( m_status ))
 	{
@@ -64,9 +68,10 @@ static NTSTATUS driver_entry( PDRIVER_OBJECT driver_obj, PUNICODE_STRING registr
 
 __int64 DriverEntry( PVOID a1, PVOID a2 )
 {
+	printf("Dispatched new driver.\n");
+
 	if (!NT_SUCCESS(imports::io_create_driver(NULL, reinterpret_cast<PDRIVER_INITIALIZE>(driver_entry))))
 	{
-		printf("failed to create driver.\n");
 		return STATUS_UNSUCCESSFUL;
 	}
 
