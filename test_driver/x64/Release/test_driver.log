@@ -1,5 +1,0 @@
-﻿  Building 'test_driver' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
-  entrypoint.cpp
-  test_driver.vcxproj -> C:\Users\Vasie\Documents\GitHub\VOC\x64\Release\test_driver.sys
-  'pwsh.exe' is not recognized as an internal or external command,
-  operable program or batch file.

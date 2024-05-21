@@ -4,6 +4,8 @@
 #include <queue>
 #include <TlHelp32.h>
 
+#include <dependencies/xor.hpp>
+
 #include "interface.h"
 
 namespace m_ue

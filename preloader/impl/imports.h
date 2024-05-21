@@ -21,7 +21,7 @@ ZwQuerySystemInformation
 	ULONG SystemInformationLength,
 	ULONG* ReturnLength
 );
-PPEB
+PPEB 
 PsGetProcessPeb
 (
 	PEPROCESS Process
@@ -38,7 +38,7 @@ IoCreateDriver
 	PDRIVER_INITIALIZE InitializationFunction
 );
 
-NTSTATUS
+NTSTATUS 
 ObCreateObject
 (
 	KPROCESSOR_MODE ProbeMode,
@@ -49,7 +49,7 @@ ObCreateObject
 	ULONG 	ObjectSize,
 	ULONG PagedPoolCharge,
 	ULONG NonPagedPoolCharge,
-	void** Object
+	void* * Object
 );
 
 void*
@@ -112,12 +112,12 @@ namespace imports
 	// 
 	//m_imported imported;
 
-	inline NTSTATUS rtl_get_version(PRTL_OSVERSIONINFOW lpVersionInformation)
+	inline NTSTATUS rtl_get_version( PRTL_OSVERSIONINFOW lpVersionInformation )
 	{
 		return RtlGetVersion(lpVersionInformation);
 	}
 
-	inline void* mm_map_io_space_ex(PHYSICAL_ADDRESS PhysicalAddress, SIZE_T NumberOfBytes, ULONG Protect)
+	inline void* mm_map_io_space_ex( PHYSICAL_ADDRESS PhysicalAddress, SIZE_T NumberOfBytes, ULONG Protect )
 	{
 		return MmMapIoSpaceEx(PhysicalAddress, NumberOfBytes, Protect);
 	}
@@ -127,37 +127,37 @@ namespace imports
 		return RtlFindExportedRoutineByName(ImageBase, RoutineNam);
 	}
 
-	inline NTSTATUS zw_load_driver(PUNICODE_STRING DriverServiceName)
+	inline NTSTATUS zw_load_driver( PUNICODE_STRING DriverServiceName )
 	{
 		return ZwLoadDriver(DriverServiceName);
 	}
 
-	inline void mm_unmap_io_space(void* BaseAddress, SIZE_T NumberOfBytes)
+	inline void mm_unmap_io_space( void* BaseAddress, SIZE_T NumberOfBytes )
 	{
 		return MmUnmapIoSpace(BaseAddress, NumberOfBytes);
 	}
 
-	inline PPHYSICAL_MEMORY_RANGE mm_get_physical_memory_ranges()
+	inline PPHYSICAL_MEMORY_RANGE mm_get_physical_memory_ranges( )
 	{
-		return MmGetPhysicalMemoryRanges();
+		return MmGetPhysicalMemoryRanges( );
 	}
 
-	inline NTSTATUS zw_query_system_information(SYSTEM_INFORMATION_CLASS SystemInformationClass, void* SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength)
+	inline NTSTATUS zw_query_system_information( SYSTEM_INFORMATION_CLASS SystemInformationClass, void* SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength )
 	{
 		return ZwQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 	}
 
-	inline void* ex_allocate_pool(POOL_TYPE PoolType, SIZE_T NumberOfBytes)
+	inline void* ex_allocate_pool( POOL_TYPE PoolType, SIZE_T NumberOfBytes )
 	{
 		return ExAllocatePool(PoolType, NumberOfBytes);
 	}
 
-	inline BOOLEAN ob_reference_object_safe(void* Object)
+	inline BOOLEAN ob_reference_object_safe( void* Object )
 	{
 		return ObReferenceObjectSafe(Object);
 	}
 
-	inline void ex_free_pool_with_tag(void* P, ULONG TAG)
+	inline void ex_free_pool_with_tag( void* P, ULONG TAG )
 	{
 		return ExFreePoolWithTag(P, TAG);
 	}
@@ -167,22 +167,22 @@ namespace imports
 	//	return reinterpret_cast< PKTHREAD( * )() >(imported.ke_get_current_thread)();
 	//}
 
-	inline void rtl_init_ansi_string(PANSI_STRING DestinationString, PCSZ SourceString)
+	inline void rtl_init_ansi_string( PANSI_STRING DestinationString, PCSZ SourceString )
 	{
 		return RtlInitAnsiString(DestinationString, SourceString);
 	}
 
-	inline NTSTATUS rtl_ansi_string_to_unicode_string(PUNICODE_STRING DestinationString, PCANSI_STRING SourceString, BOOLEAN AllocateDestinationString)
+	inline NTSTATUS rtl_ansi_string_to_unicode_string( PUNICODE_STRING DestinationString, PCANSI_STRING SourceString, BOOLEAN AllocateDestinationString )
 	{
 		return RtlAnsiStringToUnicodeString(DestinationString, SourceString, AllocateDestinationString);
 	}
 
-	inline NTSTATUS mm_copy_virtual_memory(PEPROCESS SourceProcess, void* SourceAddress, PEPROCESS TargetProcess, void* TargetAddress, SIZE_T BufferSize, KPROCESSOR_MODE PreviousMode, PSIZE_T ReturnSize)
+	inline NTSTATUS mm_copy_virtual_memory( PEPROCESS SourceProcess, void* SourceAddress, PEPROCESS TargetProcess, void* TargetAddress, SIZE_T BufferSize, KPROCESSOR_MODE PreviousMode, PSIZE_T ReturnSize )
 	{
 		return MmCopyVirtualMemory(SourceProcess, SourceAddress, TargetProcess, TargetAddress, BufferSize, PreviousMode, ReturnSize);
 	}
 
-	inline PEPROCESS io_get_current_process()
+	inline PEPROCESS io_get_current_process( )
 	{
 		return IoGetCurrentProcess();
 	}
@@ -192,37 +192,37 @@ namespace imports
 	//	return reinterpret_cast< NTSTATUS( * )(HANDLE, void**, ULONG_PTR, PSIZE_T, ULONG, ULONG) > (imported.zw_allocate_virtual_memory)(ProcessHandle, BaseAddress, ZeroBits, RegionSize, AllocationType, Protect);
 	//}
 
-	inline NTSTATUS ps_lookup_process_by_process_id(HANDLE ProcessId, PEPROCESS* Process)
+	inline NTSTATUS ps_lookup_process_by_process_id( HANDLE ProcessId, PEPROCESS* Process )
 	{
 		return PsLookupProcessByProcessId(ProcessId, Process);
 	}
 
-	inline PPEB ps_get_process_peb(PEPROCESS Process)
+	inline PPEB ps_get_process_peb( PEPROCESS Process )
 	{
 		return PsGetProcessPeb(Process);
 	}
 
-	inline LONG rtl_compare_unicode_string(PCUNICODE_STRING String1, PCUNICODE_STRING String2, BOOLEAN CaseInSensitive)
+	inline LONG rtl_compare_unicode_string( PCUNICODE_STRING String1, PCUNICODE_STRING String2, BOOLEAN CaseInSensitive )
 	{
 		return RtlCompareUnicodeString(String1, String2, CaseInSensitive);
 	}
 
-	inline void rtl_free_unicode_string(PUNICODE_STRING UnicodeString)
+	inline void rtl_free_unicode_string( PUNICODE_STRING UnicodeString )
 	{
 		return RtlFreeUnicodeString(UnicodeString);
 	}
 
-	inline LONG_PTR obf_dereference_object(void* Object)
+	inline LONG_PTR obf_dereference_object( void* Object )
 	{
 		return ObfDereferenceObject(Object);
 	}
 
-	inline NTSTATUS mm_copy_memory(void* TargetAddress, MM_COPY_ADDRESS SourceAddress, SIZE_T NumberOfBytes, ULONG Flags, PSIZE_T NumberOfBytesTransferred)
+	inline NTSTATUS mm_copy_memory( void* TargetAddress, MM_COPY_ADDRESS SourceAddress, SIZE_T NumberOfBytes, ULONG Flags, PSIZE_T NumberOfBytesTransferred )
 	{
 		return MmCopyMemory(TargetAddress, SourceAddress, NumberOfBytes, Flags, NumberOfBytesTransferred);
 	}
 
-	inline void* ps_get_process_section_base_address(PEPROCESS Process)
+	inline void* ps_get_process_section_base_address( PEPROCESS Process )
 	{
 		return PsGetProcessSectionBaseAddress(Process);
 	}
@@ -237,56 +237,56 @@ namespace imports
 	//	return reinterpret_cast< NTSTATUS( * )(HANDLE, void**, PSIZE_T, ULONG) >(imported.zw_free_virtual_memory)(ProcessHandle, BaseAddress, RegionSize, FreeType);
 	//}
 
-	inline NTSTATUS io_create_driver(PUNICODE_STRING Driver, PDRIVER_INITIALIZE INIT)
+	inline NTSTATUS io_create_driver( PUNICODE_STRING Driver, PDRIVER_INITIALIZE INIT )
 	{
 		return IoCreateDriver(Driver, INIT);
 	}
 
-	inline PMDL io_allocate_mdl(void* VirtualAddress, ULONG Length, BOOLEAN SecondaryBuffer, BOOLEAN ChargeQuota, PIRP Irp)
+	inline PMDL io_allocate_mdl( void* VirtualAddress, ULONG Length, BOOLEAN SecondaryBuffer, BOOLEAN ChargeQuota, PIRP Irp )
 	{
 		return IoAllocateMdl(VirtualAddress, Length, SecondaryBuffer, ChargeQuota, Irp);
 	}
 
-	inline void mm_probe_and_lock_pages(PMDL MemoryDescriptorList, KPROCESSOR_MODE AccessMode, LOCK_OPERATION Operation)
+	inline void mm_probe_and_lock_pages( PMDL MemoryDescriptorList, KPROCESSOR_MODE AccessMode, LOCK_OPERATION Operation )
 	{
 		return MmProbeAndLockPages(MemoryDescriptorList, AccessMode, Operation);
 	}
 
-	inline void* mm_map_locked_pages_specify_cache(PMDL MemoryDescriptorList, KPROCESSOR_MODE AccessMode, MEMORY_CACHING_TYPE CacheType, void* RequestedAddress, ULONG BugCheckOnFailure, ULONG Priority)
+	inline void* mm_map_locked_pages_specify_cache( PMDL MemoryDescriptorList, KPROCESSOR_MODE AccessMode, MEMORY_CACHING_TYPE CacheType, void* RequestedAddress, ULONG BugCheckOnFailure, ULONG Priority )
 	{
 		return MmMapLockedPagesSpecifyCache(MemoryDescriptorList, AccessMode, CacheType, RequestedAddress, BugCheckOnFailure, Priority);
 	}
 
-	inline NTSTATUS mm_protect_mdl_system_address(PMDL MemoryDescriptorList, ULONG NewProtect)
+	inline NTSTATUS mm_protect_mdl_system_address( PMDL MemoryDescriptorList, ULONG NewProtect )
 	{
 		return MmProtectMdlSystemAddress(MemoryDescriptorList, NewProtect);
 	}
 
-	inline void mm_unmap_locked_pages(void* BaseAddress, PMDL MemoryDescriptorList)
+	inline void mm_unmap_locked_pages( void* BaseAddress, PMDL MemoryDescriptorList )
 	{
 		return MmUnmapLockedPages(BaseAddress, MemoryDescriptorList);
 	}
 
-	inline void mm_unlock_pages(PMDL MemoryDescriptorList)
+	inline void mm_unlock_pages( PMDL MemoryDescriptorList )
 	{
 		return MmUnlockPages(MemoryDescriptorList);
 	}
 
-	inline void io_free_mdl(PMDL Mdl)
+	inline void io_free_mdl( PMDL Mdl )
 	{
 		return IoFreeMdl(Mdl);
 	}
-
-	inline void iof_complete_request(PIRP Irp, CCHAR PriorityBoost)
+	
+	inline void iof_complete_request( PIRP Irp, CCHAR PriorityBoost )
 	{
 		return IofCompleteRequest(Irp, PriorityBoost);
 	}
 
-	inline void rtl_init_unicode_string(PUNICODE_STRING DestinationString, PCWSTR SourceString)
+	inline void rtl_init_unicode_string( PUNICODE_STRING DestinationString, PCWSTR SourceString )
 	{
 		return RtlInitUnicodeString(DestinationString, SourceString);
-	}
-
+	}	
+	
 	//inline NTSTATUS ex_raise_hard_error( NTSTATUS ErrorStatus, ULONG NumberOfParameters,
 	//	ULONG UnicodeStringParameterMask, PULONG_PTR Parameters,
 	//	ULONG ValidResponseOptions, PULONG Response )
@@ -294,28 +294,28 @@ namespace imports
 	//	return reinterpret_cast< NTSTATUS( * )( NTSTATUS, ULONG, ULONG, PULONG_PTR, ULONG, PULONG ) >(imported.ex_raise_hard_error )( ErrorStatus, NumberOfParameters , UnicodeStringParameterMask, Parameters, ValidResponseOptions, Response);
 	//}
 
-	inline NTSTATUS io_create_symbolic_link(PUNICODE_STRING SymbolicLinkName, PUNICODE_STRING DeviceName)
+	inline NTSTATUS io_create_symbolic_link( PUNICODE_STRING SymbolicLinkName, PUNICODE_STRING DeviceName )
 	{
 		return IoCreateSymbolicLink(SymbolicLinkName, DeviceName);
 	}
 
-	inline void io_delete_device(PDEVICE_OBJECT DeviceObject)
+	inline void io_delete_device( PDEVICE_OBJECT DeviceObject )
 	{
 		return IoDeleteDevice(DeviceObject);
 	}
 
-	inline NTSTATUS io_create_device(PDRIVER_OBJECT DriverObject, ULONG DeviceExtensionSize, PUNICODE_STRING DeviceName, DEVICE_TYPE DeviceType, ULONG DeviceCharacteristics, BOOLEAN Exclusive, PDEVICE_OBJECT* DeviceObject)
+	inline NTSTATUS io_create_device( PDRIVER_OBJECT DriverObject, ULONG DeviceExtensionSize, PUNICODE_STRING DeviceName, DEVICE_TYPE DeviceType, ULONG DeviceCharacteristics, BOOLEAN Exclusive, PDEVICE_OBJECT* DeviceObject )
 	{
 		return IoCreateDevice(DriverObject, DeviceExtensionSize, DeviceName, DeviceType, DeviceCharacteristics, Exclusive, DeviceObject);
 	}
 
-	inline ULONG ke_query_time_increment()
+	inline ULONG ke_query_time_increment(  )
 	{
-		return KeQueryTimeIncrement();
+		return KeQueryTimeIncrement( );
 	}
 
-	inline ULONG rtl_random_ex(PULONG Seed)
+	inline ULONG rtl_random_ex( PULONG Seed )
 	{
-		return RtlRandomEx(Seed);
+		return RtlRandomEx( Seed );
 	}
 }

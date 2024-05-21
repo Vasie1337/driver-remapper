@@ -7,7 +7,7 @@ int main( )
 		return 0;
 	}
 
-	device_t.m_pid = device_t.get_process_id("FortniteClient-Win64-Shipping.exe");
+	device_t.m_pid = device_t.get_process_id("explorer.exe");
 	if (!device_t.m_pid || !device_t.is_mapped(device_t.m_pid)) {
 		m_log("[-] Target not mapped\n");
 		return 0;

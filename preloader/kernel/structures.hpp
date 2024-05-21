@@ -1,16 +1,16 @@
 #pragma once
 #include <stdint.h>
 
-//#define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
+#define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
 
 #ifdef PRINT_DEBUG
-#define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[fortnite-kernel-device]: " text), ##__VA_ARGS__)
+#define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[DrvMapper]: " text), ##__VA_ARGS__)
 #else
 #define printf(text, ...) 
 #endif
 
 #define PFN_TO_PAGE(pfn) ( pfn << 12 )
-#define dereference(ptr) (const uintptr_t)(ptr + *( int * )( ( BYTE * )ptr + 3 ) + 7)
+#define dereference(ptr) (const std::uint64_t)(ptr + *( int * )( ( std::uint8_t * )ptr + 3 ) + 7)
 #define in_range(x,a,b)    (x >= a && x <= b) 
 #define get_bits( x )    (in_range((x&(~0x20)),'A','F') ? ((x&(~0x20)) - 'A' + 0xA) : (in_range(x,'0','9') ? x - '0' : 0))
 #define get_byte( x )    (get_bits(x[0]) << 4 | get_bits(x[1]))
@@ -18,11 +18,80 @@
 #define to_lower_i(Char) ((Char >= 'A' && Char <= 'Z') ? (Char + 32) : Char)
 #define to_lower_c(Char) ((Char >= (char*)'A' && Char <= (char*)'Z') ? (Char + 32) : Char)
 
+typedef unsigned char CHAR8;
+typedef unsigned short CHAR16;
+
+typedef struct _IMAGE_IMPORT_DESCRIPTOR2 {
+	UINT32   LookupTableRVA;             // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
+	UINT32   TimeDateStamp;                  // 0 if not bound,
+	// -1 if bound, and real date\time stamp
+	//     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
+	// O.W. date/time stamp of DLL bound to (Old BIND)
+
+	UINT32   ForwarderChain;                 // -1 if no forwarders
+	UINT32   Name;
+	UINT32   ImportAddressTable;                     // RVA to IAT (if bound this IAT has actual addresses)
+} IMAGE_IMPORT_DESCRIPTOR2;
+
+typedef IMAGE_IMPORT_DESCRIPTOR2* PIMAGE_IMPORT_DESCRIPTOR2;
+
+typedef struct _IMAGE_IMPORT_DESCRIPTOR_OWN {
+	UINT32   LookupTableRVA;             // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
+	UINT32   TimeDateStamp;                  // 0 if not bound,
+	// -1 if bound, and real date\time stamp
+	//     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
+	// O.W. date/time stamp of DLL bound to (Old BIND)
+
+	UINT32   ForwarderChain;                 // -1 if no forwarders
+	UINT32   Name;
+	UINT32   ImportAddressTable;                     // RVA to IAT (if bound this IAT has actual addresses)
+} IMAGE_IMPORT_DESCRIPTOR_OWN;
+
+typedef IMAGE_IMPORT_DESCRIPTOR_OWN* PIMAGE_IMPORT_DESCRIPTOR_OWN;
+typedef struct _RELOC_NAME_TABLE_ENTRY
+{
+	UINT16 Hint;
+	CHAR8 Name[];
+} RELOC_NAME_TABLE_ENTRY, PRELOC_NAME_TABLE_ENTRY;
+
+typedef struct _RELOC_BLOCK_HDR
+{
+	UINT32 PageRVA;
+	UINT32 BlockSize;
+} RELOC_BLOCK_HDR, * PRELOC_BLOCK_HDR;
+
+typedef struct _RELOC_ENTRY
+{
+	UINT16 Offset : 12;
+	UINT16 Type : 4;
+} RELOC_ENTRY, * PRELOC_ENTRY;
+
+typedef struct _KLDR_DATA_TABLE_ENTRY
+{
+	LIST_ENTRY InLoadOrderLinks;
+	void* ExceptionTable;
+	ULONG ExceptionTableSize;
+	void* GpValue;
+	PNON_PAGED_DEBUG_INFO NonPagedDebugInfo;
+	void* DllBase;
+	void* EntryPoint;
+	ULONG SizeOfImage;
+	UNICODE_STRING FullDllName;
+	UNICODE_STRING BaseDllName;
+	ULONG Flags;
+	USHORT LoadCount;
+	USHORT __Unused5;
+	void* SectionPointer;
+	ULONG CheckSum;
+	void* LoadedImports;
+	void* PatchInformation;
+} KLDR_DATA_TABLE_ENTRY, * PKLDR_DATA_TABLE_ENTRY;
+
 typedef struct _RTL_PROCESS_MODULE_INFORMATION
 {
 	HANDLE Section;
-	PVOID MappedBase;
-	PVOID ImageBase;
+	void* MappedBase;
+	void* ImageBase;
 	ULONG ImageSize;
 	ULONG Flags;
 	USHORT LoadOrderIndex;
@@ -42,8 +111,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY {
 	LIST_ENTRY InLoadOrderModuleList;
 	LIST_ENTRY InMemoryOrderModuleList;
 	LIST_ENTRY InInitializationOrderModuleList;
-	PVOID DllBase;
-	PVOID EntryPoint;
+	void* DllBase;
+	void* EntryPoint;
 	ULONG SizeOfImage;
 	UNICODE_STRING FullDllName;
 	UNICODE_STRING BaseDllName;
@@ -51,25 +120,25 @@ typedef struct _LDR_DATA_TABLE_ENTRY {
 	USHORT LoadCount;
 	USHORT TlsIndex;
 	LIST_ENTRY HashLinks;
-	PVOID SectionPointer;
+	void* SectionPointer;
 	ULONG CheckSum;
 	ULONG TimeDateStamp;
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 
 typedef struct _RTL_CRITICAL_SECTION
 {
-	VOID* DebugInfo;
+	void* DebugInfo;
 	LONG LockCount;
 	LONG RecursionCount;
-	PVOID OwningThread;
-	PVOID LockSemaphore;
+	void* OwningThread;
+	void* LockSemaphore;
 	ULONG SpinCount;
 } RTL_CRITICAL_SECTION, * PRTL_CRITICAL_SECTION;
 
 typedef struct _PEB_LDR_DATA {
 	ULONG Length;
 	BOOLEAN Initialized;
-	PVOID SsHandle;
+	void* SsHandle;
 	LIST_ENTRY ModuleListLoadOrder;
 	LIST_ENTRY ModuleListMemoryOrder;
 	LIST_ENTRY ModuleListInitOrder;
@@ -86,36 +155,36 @@ typedef struct _PEB
 	ULONG IsLegacyProcess : 1;
 	ULONG IsImageDynamicallyRelocated : 1;
 	ULONG SpareBits : 4;
-	PVOID Mutant;
-	PVOID ImageBaseAddress;
+	void* Mutant;
+	void* ImageBaseAddress;
 	PPEB_LDR_DATA Ldr;
-	VOID* ProcessParameters;
-	PVOID SubSystemData;
-	PVOID ProcessHeap;
+	void* ProcessParameters;
+	void* SubSystemData;
+	void* ProcessHeap;
 	PRTL_CRITICAL_SECTION FastPebLock;
-	PVOID AtlThunkSListPtr;
-	PVOID IFEOKey;
+	void* AtlThunkSListPtr;
+	void* IFEOKey;
 	ULONG CrossProcessFlags;
 	ULONG ProcessInJob : 1;
 	ULONG ProcessInitializing : 1;
 	ULONG ReservedBits0 : 30;
 	union
 	{
-		PVOID KernelCallbackTable;
-		PVOID UserSharedInfoPtr;
+		void* KernelCallbackTable;
+		void* UserSharedInfoPtr;
 	};
 	ULONG SystemReserved[1];
 	ULONG SpareUlong;
-	VOID* FreeList;
+	void* FreeList;
 	ULONG TlsExpansionCounter;
-	PVOID TlsBitmap;
+	void* TlsBitmap;
 	ULONG TlsBitmapBits[2];
-	PVOID ReadOnlySharedMemoryBase;
-	PVOID HotpatchInformation;
-	VOID** ReadOnlyStaticServerData;
-	PVOID AnsiCodePageData;
-	PVOID OemCodePageData;
-	PVOID UnicodeCaseTableData;
+	void* ReadOnlySharedMemoryBase;
+	void* HotpatchInformation;
+	void** ReadOnlyStaticServerData;
+	void* AnsiCodePageData;
+	void* OemCodePageData;
+	void* UnicodeCaseTableData;
 	ULONG NumberOfProcessors;
 	ULONG NtGlobalFlag;
 	LARGE_INTEGER CriticalSectionTimeout;
@@ -125,9 +194,9 @@ typedef struct _PEB
 	ULONG HeapDeCommitFreeBlockThreshold;
 	ULONG NumberOfHeaps;
 	ULONG MaximumNumberOfHeaps;
-	VOID** ProcessHeaps;
-	PVOID GdiSharedHandleTable;
-	PVOID ProcessStarterHelper;
+	void** ProcessHeaps;
+	void* GdiSharedHandleTable;
+	void* ProcessStarterHelper;
 	ULONG GdiDCAttributeList;
 	PRTL_CRITICAL_SECTION LoaderLock;
 	ULONG OSMajorVersion;
@@ -140,41 +209,40 @@ typedef struct _PEB
 	ULONG ImageSubsystemMinorVersion;
 	ULONG ImageProcessAffinityMask;
 	ULONG GdiHandleBuffer[34];
-	PVOID PostProcessInitRoutine;
-	PVOID TlsExpansionBitmap;
+	void* PostProcessInitRoutine;
+	void* TlsExpansionBitmap;
 	ULONG TlsExpansionBitmapBits[32];
 	ULONG SessionId;
 	ULARGE_INTEGER AppCompatFlags;
 	ULARGE_INTEGER AppCompatFlagsUser;
-	PVOID pShimData;
-	PVOID AppCompatInfo;
+	void* pShimData;
+	void* AppCompatInfo;
 	UNICODE_STRING CSDVersion;
-	VOID* ActivationContextData;
-	VOID* ProcessAssemblyStorageMap;
-	VOID* SystemDefaultActivationContextData;
-	VOID* SystemAssemblyStorageMap;
+	void* ActivationContextData;
+	void* ProcessAssemblyStorageMap;
+	void* SystemDefaultActivationContextData;
+	void* SystemAssemblyStorageMap;
 	ULONG MinimumStackCommit;
-	VOID* FlsCallback;
+	void* FlsCallback;
 	LIST_ENTRY FlsListHead;
-	PVOID FlsBitmap;
+	void* FlsBitmap;
 	ULONG FlsBitmapBits[4];
 	ULONG FlsHighIndex;
-	PVOID WerRegistrationData;
-	PVOID WerShipAssertPtr;
+	void* WerRegistrationData;
+	void* WerShipAssertPtr;
 } PEB, * PPEB;
-
 
 typedef union _virt_addr_t
 {
 	void* value;
 	struct
 	{
-		uintptr_t offset : 12;
-		uintptr_t pt_index : 9;
-		uintptr_t pd_index : 9;
-		uintptr_t pdpt_index : 9;
-		uintptr_t pml4_index : 9;
-		uintptr_t reserved : 16;
+		std::uint64_t offset : 12;
+		std::uint64_t pt_index : 9;
+		std::uint64_t pd_index : 9;
+		std::uint64_t pdpt_index : 9;
+		std::uint64_t pml4_index : 9;
+		std::uint64_t reserved : 16;
 	};
 } virt_addr_t, * pvirt_addr_t;
 typedef enum _SYSTEM_INFORMATION_CLASS
@@ -555,3 +623,41 @@ typedef struct _MMPFN
 		}; /* size: 0x0008 */
 	} /* size: 0x0008 */ u4;
 } MMPFN, * PMMPFN; /* size: 0x0030 */
+
+typedef union _PTE {
+	QWORD value;
+	struct
+	{
+		QWORD present : 1;
+		QWORD rw : 1;
+		QWORD user_supervisor : 1;
+		QWORD page_write_through : 1;
+		QWORD page_cache : 1;
+		QWORD accessed : 1;
+		QWORD dirty : 1;
+		QWORD access_type : 1;
+		QWORD global : 1;
+		QWORD ignore_2 : 3;
+		QWORD pfn : 36;
+		QWORD reserved : 4;
+		QWORD ignore_3 : 7;
+		QWORD pk : 4;
+		QWORD nx : 1;
+	};
+} PTE, *PPTE;
+
+typedef struct _IO_CLIENT_EXTENSION
+{
+	struct _IO_CLIENT_EXTENSION* NextExtension;
+	void* ClientIdentificationAddress;
+} IO_CLIENT_EXTENSION, * PIO_CLIENT_EXTENSION;
+
+typedef struct _EXTENDED_DRIVER_EXTENSION
+{
+	struct _DRIVER_OBJECT* DriverObject;
+	PDRIVER_ADD_DEVICE AddDevice;
+	ULONG Count;
+	UNICODE_STRING ServiceKeyName;
+	PIO_CLIENT_EXTENSION ClientDriverExtension;
+	PFS_FILTER_CALLBACKS FsFilterCallbacks;
+} EXTENDED_DRIVER_EXTENSION, * PEXTENDED_DRIVER_EXTENSION;

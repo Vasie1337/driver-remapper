@@ -1,5 +1,4 @@
 #include "driver.h"
-#include <dependencies/xor.hpp>
 
 int m_ue::interface_t::get_process_id(std::string proc_name)
 {
@@ -25,7 +24,7 @@ int m_ue::interface_t::get_process_id(std::string proc_name)
 }
 
 bool m_ue::interface_t::start_service( ) {
-	this->m_handle = CreateFileA( _( "\\\\.\\{3DC31255-A121-4FEA-B9F4-DD7367D106FF}" ), GENERIC_READ, 0, 0, 3, 0x00000080, 0 );
+	this->m_handle = CreateFileA( _( "\\\\.\\{67481902-14CD-4FCB-B17F-A7515AD33274}" ), GENERIC_READ, 0, 0, 3, 0x00000080, 0 );
 
 	if ( this->m_handle != INVALID_HANDLE_VALUE ) {
 		return true;
@@ -114,7 +113,7 @@ bool m_ue::interface_t::dump_memory(uint64_t address, size_t len)
 		if (std::abs(buffer) < std::numeric_limits<float>::epsilon() || buffer > 100000)
 			continue;
 
-		printf("offset: 0x%p, value %f\n", i, buffer);
+		//printf("offset: 0x%p, value %f\n", i, buffer);
 	}
 	Sleep(5);
 	system("cls");

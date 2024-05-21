@@ -18,12 +18,30 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="entrypoint.cpp" />
+    <ClInclude Include="impl\bytes.h" />
+    <ClInclude Include="impl\utils\drivers.h" />
+    <ClInclude Include="impl\mapper\mapper.h" />
+    <ClInclude Include="impl\mapper\pe_utils64.h" />
+    <ClInclude Include="kernel\defs.h" />
+    <ClInclude Include="kernel\xor.hpp" />
+    <ClInclude Include="impl\communication\structs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="impl\utils\crt.h" />
+    <ClInclude Include="impl\imports.h" />
+    <ClInclude Include="impl\utils\modules.h" />
+    <ClInclude Include="impl\utils\scanner.h" />
+    <ClInclude Include="kernel\structures.hpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{4a13c2d3-15e8-4e2f-b540-1e1619ca431b}</ProjectGuid>
-    <RootNamespace>fortnite</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectGuid>{4c4c54e5-c199-4146-b5d7-fddc9fe74066}</ProjectGuid>
+    <RootNamespace>km</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <ProjectName>preloader</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -46,15 +64,19 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Driver</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
+    <TargetVersion>Windows10</TargetVersion>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <DriverType>KMDF</DriverType>
+    <ALLOW_DATE_TIME>1</ALLOW_DATE_TIME>
+    <Driver_SpectreMitigation>false</Driver_SpectreMitigation>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -71,14 +93,21 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetName>$(ProjectName)</TargetName>
+    <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bootstrap\</OutDir>
     <IntDir>$(SolutionDir)bootstrap\$(ProjectName)\</IntDir>
-    <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>true</GenerateManifest>
-    <IncludePath>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x64;$(LibraryPath)</LibraryPath>
+    <TargetName>$(ProjectName)</TargetName>
+    <EnableInf2cat>false</EnableInf2cat>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -114,7 +143,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\fortnite\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,79 +152,49 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <StringPooling>true</StringPooling>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <ControlFlowGuard>false</ControlFlowGuard>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Fast</FloatingPointModel>
-      <FloatingPointExceptions>false</FloatingPointExceptions>
-      <CreateHotpatchableImage>false</CreateHotpatchableImage>
-      <AdditionalIncludeDirectories>..\usermode\</AdditionalIncludeDirectories>
+      <OmitDefaultLibName>true</OmitDefaultLibName>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Native</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <LargeAddressAware>true</LargeAddressAware>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <EntryPointSymbol>
-      </EntryPointSymbol>
-      <UACUIAccess>false</UACUIAccess>
-      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
+      <MinimumRequiredVersion>$(SUBSYSTEM_NATVER)</MinimumRequiredVersion>
+      <Driver>Driver</Driver>
+      <EntryPointSymbol>manual_mapped_entry</EntryPointSymbol>
+      <RandomizedBaseAddress />
+      <DataExecutionPrevention />
+      <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <ProgramDatabaseFile>No</ProgramDatabaseFile>
+      <LinkErrorReporting>NoErrorReport</LinkErrorReporting>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <Profile>false</Profile>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
+    <DriverSign>
+      <FileDigestAlgorithm>SHA1</FileDigestAlgorithm>
+    </DriverSign>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_win32.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_demo.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_draw.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_tables.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="dependencies\driver\driver.cpp" />
-    <ClCompile Include="overlay.cpp" />
-    <ClCompile Include="source.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.h" />
-    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_win32.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imconfig.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imgui.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imgui_internal.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imstb_rectpack.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imstb_textedit.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imstb_truetype.h" />
-    <ClInclude Include="dependencies\driver\driver.h" />
-    <ClInclude Include="dependencies\driver\interface.h" />
-    <ClInclude Include="dependencies\includes.hpp" />
-    <ClInclude Include="dependencies\math.h" />
-    <ClInclude Include="dependencies\xor.hpp" />
-    <ClInclude Include="overlay.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="dependencies\driver\asm\assert.asm">
-      <FileType>CppCode</FileType>
-    </MASM>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

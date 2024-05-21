@@ -17,7 +17,7 @@ typedef enum _requests
 
 struct m_read_info
 {
-	std::uint64_t address;
+	uintptr_t address;
 	void* buffer;
 	size_t size;
 };
@@ -26,7 +26,7 @@ typedef struct _read_invoke
 {
 	//bool pool;
 	uint32_t pid;
-	std::uint64_t address;
+	uintptr_t address;
 	void* buffer;
 	size_t size;
 } read_invoke, * pread_invoke;
@@ -34,7 +34,7 @@ typedef struct _read_invoke
 typedef struct _write_invoke
 {
 	uint32_t pid;
-	std::uint64_t address;
+	uintptr_t address;
 	void* buffer;
 	size_t size;
 } write_invoke, * pwrite_invoke;
@@ -48,7 +48,7 @@ typedef struct _dtb_invoke
 typedef struct _base_invoke
 {
 	uint32_t pid;
-	std::uint64_t handle;
+	uintptr_t handle;
 	const char* name;
 	size_t size;
 } base_invoke, * pbase_invoke;
