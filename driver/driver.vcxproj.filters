@@ -6,7 +6,6 @@
   <ItemGroup>
     <ClInclude Include="impl\communication\structs.h" />
     <ClInclude Include="impl\crt.h" />
-    <ClInclude Include="impl\imports.h" />
     <ClInclude Include="kernel\defs.h" />
     <ClInclude Include="kernel\structures.hpp" />
     <ClInclude Include="kernel\xor.hpp" />

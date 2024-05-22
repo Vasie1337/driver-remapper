@@ -78,7 +78,7 @@ namespace pml4
 
 		size_t read{};
 
-		auto ranges = imports::mm_get_physical_memory_ranges();
+		auto ranges = MmGetPhysicalMemoryRanges();
 
 		for (int i = 0;; i++) {
 

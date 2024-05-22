@@ -15,13 +15,13 @@ namespace request
 		}
 
 		PEPROCESS process = 0;
-		if (imports::ps_lookup_process_by_process_id((HANDLE)data.pid, &process) != STATUS_SUCCESS) {
+		if (PsLookupProcessByProcessId((HANDLE)data.pid, &process) != STATUS_SUCCESS) {
 			return STATUS_UNSUCCESSFUL;
 		}
 
-		PPEB pPeb = imports::ps_get_process_peb(process);
+		PPEB pPeb = PsGetProcessPeb(process);
 
-		imports::obf_dereference_object(process);
+		ObfDereferenceObject(process);
 
 		reinterpret_cast<peb_invoke*> (request->data)->handle = (ULONGLONG)pPeb;
 
@@ -44,12 +44,12 @@ namespace request
 		}
 
 		PEPROCESS process = 0;
-		if (imports::ps_lookup_process_by_process_id((HANDLE)data.pid, &process) != STATUS_SUCCESS) {
+		if (PsLookupProcessByProcessId((HANDLE)data.pid, &process) != STATUS_SUCCESS) {
 			return STATUS_UNSUCCESSFUL;
 		}
 
 		if (!data.name) {
-			uintptr_t base = (uintptr_t)imports::ps_get_process_section_base_address(process);
+			uintptr_t base = (uintptr_t)PsGetProcessSectionBaseAddress(process);
 
 			reinterpret_cast<base_invoke*> (request->data)->handle = base;
 
@@ -57,12 +57,12 @@ namespace request
 		}
 
 		ANSI_STRING ansi_name;
-		imports::rtl_init_ansi_string(&ansi_name, data.name);
+		RtlInitAnsiString(&ansi_name, data.name);
 
 		UNICODE_STRING compare_name;
-		imports::rtl_ansi_string_to_unicode_string(&compare_name, &ansi_name, TRUE);
+		RtlAnsiStringToUnicodeString(&compare_name, &ansi_name, TRUE);
 
-		PPEB pPeb = imports::ps_get_process_peb(process);
+		PPEB pPeb = PsGetProcessPeb(process);
 
 		if (pPeb) {
 			PPEB_LDR_DATA pLdr = (PPEB_LDR_DATA)pPeb->Ldr;
@@ -75,7 +75,7 @@ namespace request
 					PLDR_DATA_TABLE_ENTRY pEntry = CONTAINING_RECORD(listEntry, LDR_DATA_TABLE_ENTRY, InLoadOrderModuleList);
 					printf("modules: %wZ\n", pEntry->BaseDllName);
 
-					if (imports::rtl_compare_unicode_string(&pEntry->BaseDllName, &compare_name, TRUE) == 0) {
+					if (RtlCompareUnicodeString(&pEntry->BaseDllName, &compare_name, TRUE) == 0) {
 						out = (uint64_t)pEntry->DllBase;
 						break;
 					}
@@ -83,8 +83,8 @@ namespace request
 			}
 		}
 
-		imports::rtl_free_unicode_string(&compare_name);
-		imports::obf_dereference_object(process);
+		RtlFreeUnicodeString(&compare_name);
+		ObfDereferenceObject(process);
 
 		reinterpret_cast<base_invoke*> (request->data)->handle = out;
 
@@ -101,17 +101,17 @@ namespace request
 		}
 
 		PEPROCESS process = 0;
-		if (imports::ps_lookup_process_by_process_id((HANDLE)data.pid, &process) != STATUS_SUCCESS)
+		if (PsLookupProcessByProcessId((HANDLE)data.pid, &process) != STATUS_SUCCESS)
 		{
 			printf("invalid process.\n");
 			return STATUS_UNSUCCESSFUL;
 		}
 
-		vars->m_stored_dtb = pml4::dirbase_from_base_address((void*)imports::ps_get_process_section_base_address(process), vars);
+		vars->m_stored_dtb = pml4::dirbase_from_base_address((void*)PsGetProcessSectionBaseAddress(process), vars);
 
 		printf("cr3: %llx\n", vars->m_stored_dtb);
 
-		imports::obf_dereference_object(process);
+		ObfDereferenceObject(process);
 
 		reinterpret_cast<dtb_invoke*> (request->data)->operation = true;
 

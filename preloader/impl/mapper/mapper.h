@@ -1,6 +1,4 @@
 #pragma once
-#include <impl/mapper/pe_utils64.h>
-
 namespace mapper
 {
 	void resolve_relocs(std::uint64_t imageBase, PIMAGE_NT_HEADERS nt_headers)
@@ -21,31 +19,71 @@ namespace mapper
 		}
 	}
 
+	ULONG64 get_export(PBYTE base, PCHAR _export) {
+		PIMAGE_DOS_HEADER dosHeaders = (PIMAGE_DOS_HEADER)base;
+		if (dosHeaders->e_magic != IMAGE_DOS_SIGNATURE) {
+			return 0;
+		}
+
+		PIMAGE_NT_HEADERS64 ntHeaders = (PIMAGE_NT_HEADERS64)(base + dosHeaders->e_lfanew);
+
+		ULONG exportsRva = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+		if (!exportsRva) {
+			return 0;
+		}
+
+		PIMAGE_EXPORT_DIRECTORY exports = (PIMAGE_EXPORT_DIRECTORY)(base + exportsRva);
+		PULONG nameRva = (PULONG)(base + exports->AddressOfNames);
+
+		for (ULONG i = 0; i < exports->NumberOfNames; ++i) {
+			PCHAR func = (PCHAR)(base + nameRva[i]);
+			if (strcmp(func, _export) == 0) {
+				PULONG funcRva = (PULONG)(base + exports->AddressOfFunctions);
+				PWORD ordinalRva = (PWORD)(base + exports->AddressOfNameOrdinals);
+
+				return (ULONG64)base + funcRva[ordinalRva[i]];
+			}
+		}
+
+		return 0;
+	}
+
 	void resolve_imports(std::uint64_t imageBase, PIMAGE_NT_HEADERS nt_headers)
 	{
-		PIMAGE_DATA_DIRECTORY import_dir = &nt_headers->OptionalHeader.DataDirectory[1];
-		for (PIMAGE_IMPORT_DESCRIPTOR2 desc = (PIMAGE_IMPORT_DESCRIPTOR2)(imageBase + import_dir->VirtualAddress); desc->LookupTableRVA; ++desc)
-		{
-			CHAR16 buffer[260];
-			CHAR8* mod_name = (CHAR8*)(imageBase + desc->Name);
-			for (int i = 0; i < 259 && mod_name[i]; ++i)
-				buffer[i] = (CHAR16)mod_name[i], buffer[i + 1] = L'\0';
-			void* module_base = pe_utils::get_loaded_module_base(buffer);
-			for (UINT64* lookup_entry = (UINT64*)(imageBase + desc->LookupTableRVA), *iat_entry = (UINT64*)(imageBase + desc->ImportAddressTable); *lookup_entry; ++lookup_entry, ++iat_entry)
-			{
-				if (*lookup_entry & (1ull << 63))
-					*(void**)iat_entry = pe_utils::find_export_by_ordinal(module_base, *lookup_entry & 0xFFFF);
-				else
-					*(void**)iat_entry = pe_utils::find_export(module_base, ((RELOC_NAME_TABLE_ENTRY*)(imageBase + (*lookup_entry & 0x7FFFFFFF)))->Name);
+		ULONG importsRva = nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+		if (importsRva) {
+			PIMAGE_IMPORT_DESCRIPTOR importDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)(imageBase + importsRva);
+
+			for (; importDescriptor->FirstThunk; ++importDescriptor) {
+				PCHAR moduleName = (PCHAR)(imageBase + importDescriptor->Name);
+				auto module = modules::get_kernel_module(moduleName);
+				
+				PIMAGE_THUNK_DATA64 thunk = (PIMAGE_THUNK_DATA64)(imageBase + importDescriptor->FirstThunk);
+				PIMAGE_THUNK_DATA64 thunkOriginal = (PIMAGE_THUNK_DATA64)(imageBase + importDescriptor->OriginalFirstThunk);
+
+				for (; thunk->u1.AddressOfData; ++thunk, ++thunkOriginal) {
+					PCHAR importName = ((PIMAGE_IMPORT_BY_NAME)(imageBase + thunkOriginal->u1.AddressOfData))->Name;
+					ULONG64 import = get_export((PBYTE)module.address, importName);
+					thunk->u1.Function = import;
+				}
 			}
 		}
 	}
 
 	void unload_discardable_sections(std::uint64_t imageBase, PIMAGE_NT_HEADERS nt_headers)
 	{
-		auto sec_hdr = (PIMAGE_SECTION_HEADER)((std::uint8_t*)(&nt_headers->FileHeader) + sizeof(IMAGE_FILE_HEADER) + nt_headers->FileHeader.SizeOfOptionalHeader);
-		for (int i = 0; i < nt_headers->FileHeader.NumberOfSections; i++, sec_hdr++)
-			if (sec_hdr->Characteristics & 0x02000000)
-				crt::kmemset((void*)(imageBase + sec_hdr->VirtualAddress), 0x00, sec_hdr->SizeOfRawData);
+		const auto current_image_section = IMAGE_FIRST_SECTION(nt_headers);
+
+		for (auto i = 0; i < nt_headers->FileHeader.NumberOfSections; ++i)
+		{
+			if (current_image_section[i].Characteristics & IMAGE_SCN_MEM_DISCARDABLE)
+			{
+				crt::kmemset(
+					(void*)(imageBase + current_image_section[i].VirtualAddress), 
+					0xCC, 
+					current_image_section[i].SizeOfRawData
+				);
+			}
+		}
 	}
 }

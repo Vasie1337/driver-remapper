@@ -1,9 +1,8 @@
 #include "kdmapper.hpp"
 
-
 uint64_t kdmapper::AllocMdlMemory(HANDLE iqvw64e_device_handle, uint64_t size, uint64_t* mdlPtr) {
 	/*added by psec*/
-	LARGE_INTEGER LowAddress, HighAddress;
+	LARGE_INTEGER LowAddress{}, HighAddress{};
 	LowAddress.QuadPart = 0;
 	HighAddress.QuadPart = 0xffff'ffff'ffff'ffffULL;
 
@@ -175,7 +174,7 @@ uint64_t kdmapper::MapDriver(HANDLE iqvw64e_device_handle, BYTE* data, ULONG64 p
 		}
 
 		NTSTATUS status = 0;
-		if (!intel_driver::CallKernelFunction(iqvw64e_device_handle, &status, address_of_entry_point, (PassAllocationAddressAsFirstParam ? realBase : param1), param2)) {
+		if (!intel_driver::CallKernelFunction(iqvw64e_device_handle, &status, address_of_entry_point, param1, param2)) {
 			Log(L"[-] Failed to call driver entry" << std::endl);
 			kernel_image_base = realBase;
 			break;

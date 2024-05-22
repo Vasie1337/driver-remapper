@@ -9,7 +9,7 @@ namespace physical {
 	{
 		MM_COPY_ADDRESS target_address = { 0 };
 		target_address.PhysicalAddress.QuadPart = address;
-		return imports::mm_copy_memory(buffer, target_address, size, MM_COPY_MEMORY_PHYSICAL, bytes);
+		return MmCopyMemory(buffer, target_address, size, MM_COPY_MEMORY_PHYSICAL, bytes);
 	}
 
 	auto write_physical(std::uintptr_t address,
@@ -23,7 +23,7 @@ namespace physical {
 		PHYSICAL_ADDRESS AddrToWrite = { 0 };
 		AddrToWrite.QuadPart = (LONGLONG)address;
 
-		PVOID pmapped_mem = imports::mm_map_io_space_ex(AddrToWrite, size, PAGE_READWRITE);
+		PVOID pmapped_mem = MmMapIoSpaceEx(AddrToWrite, size, PAGE_READWRITE);
 
 		if (!pmapped_mem)
 			return STATUS_UNSUCCESSFUL;
@@ -31,7 +31,7 @@ namespace physical {
 		crt::kmemcpy(pmapped_mem, buffer, size);
 
 		*bytes = size;
-		imports::mm_unmap_io_space(pmapped_mem, size);
+		MmUnmapIoSpace(pmapped_mem, size);
 		return STATUS_SUCCESS;
 	}
 

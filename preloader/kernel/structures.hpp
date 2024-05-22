@@ -1,9 +1,9 @@
 #pragma once
 #include <stdint.h>
 
-#define PRINT_DEBUG // Enable/disable(commented out) printf debugging into DebugView with this option.
+#define PRINT_DEBUG 1
 
-#ifdef PRINT_DEBUG
+#if PRINT_DEBUG
 #define printf(text, ...) DbgPrintEx(DPFLTR_IHVBUS_ID, 0, ("[DrvMapper]: " text), ##__VA_ARGS__)
 #else
 #define printf(text, ...) 
@@ -661,3 +661,64 @@ typedef struct _EXTENDED_DRIVER_EXTENSION
 	PIO_CLIENT_EXTENSION ClientDriverExtension;
 	PFS_FILTER_CALLBACKS FsFilterCallbacks;
 } EXTENDED_DRIVER_EXTENSION, * PEXTENDED_DRIVER_EXTENSION;
+
+EXTERN_C
+{
+NTSTATUS MmCopyVirtualMemory
+(
+	PEPROCESS SourceProcess,
+	void* SourceAddress,
+	PEPROCESS TargetProcess,
+	void* TargetAddress,
+	SIZE_T BufferSize,
+	KPROCESSOR_MODE PreviousMode,
+	PSIZE_T ReturnSize
+);
+NTSTATUS
+ZwQuerySystemInformation
+(
+	SYSTEM_INFORMATION_CLASS SystemInformationClass,
+	void* SystemInformation,
+	ULONG SystemInformationLength,
+	ULONG* ReturnLength
+);
+PPEB
+PsGetProcessPeb
+(
+	PEPROCESS Process
+);
+void*
+PsGetProcessSectionBaseAddress
+(
+	PEPROCESS Process
+);
+NTSTATUS
+IoCreateDriver
+(
+	PUNICODE_STRING DriverName,
+	PDRIVER_INITIALIZE InitializationFunction
+);
+
+NTSTATUS
+ObCreateObject
+(
+	KPROCESSOR_MODE ProbeMode,
+	POBJECT_TYPE 	Type,
+	POBJECT_ATTRIBUTES ObjectAttributes,
+	KPROCESSOR_MODE 	AccessMode,
+	void* ParseContext,
+	ULONG 	ObjectSize,
+	ULONG PagedPoolCharge,
+	ULONG NonPagedPoolCharge,
+	void** Object
+);
+
+void*
+RtlFindExportedRoutineByName
+(
+	void* ImageBase,
+	PCCH RoutineNam
+);
+
+__declspec(dllimport) POBJECT_TYPE IoDriverObjectType;
+}

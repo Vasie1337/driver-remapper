@@ -117,12 +117,14 @@ namespace crt
 	{
 		SIZE_T bytes = 0;
 
-		if (imports::mm_copy_virtual_memory(imports::io_get_current_process(), src, imports::io_get_current_process(), dst, size, KernelMode, &bytes) == STATUS_SUCCESS && bytes == size)
+		if (MmCopyVirtualMemory(IoGetCurrentProcess(), src, IoGetCurrentProcess(), dst, size, KernelMode, &bytes) == STATUS_SUCCESS && bytes == size)
 		{
 			return true;
 		}
 
 		return false;
 	}
+
+
 }
 

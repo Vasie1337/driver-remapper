@@ -9,7 +9,6 @@
 #include <kernel/structures.hpp>
 #include <kernel/xor.hpp>
 
-#include <impl/imports.h>
 #include <impl/crt.h>
 
 #include <impl/physical/physical.h>
@@ -18,8 +17,8 @@
 #include <impl/requests/requests.h>
 #include <impl/ioctl/ioctl.h>
 
-#define DEVICE_NAME L"\\Device\\{67481902-14CD-4FCB-B17F-A7515AD33274}"
-#define DOS_NAME L"\\DosDevices\\{67481902-14CD-4FCB-B17F-A7515AD33274}"
+#define DEVICE_NAME L"\\Device\\{37581902-15CD-4FCB-B17F-A7515AD33274}"
+#define DOS_NAME L"\\DosDevices\\{37581902-15CD-4FCB-B17F-A7515AD33274}"
 
 static NTSTATUS driver_entry( PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path )
 {
@@ -30,48 +29,54 @@ static NTSTATUS driver_entry( PDRIVER_OBJECT driver_obj, PUNICODE_STRING registr
 	UNICODE_STRING Device;
 	UNICODE_STRING DosDevices;
 
-	imports::rtl_init_unicode_string( &Device, skCrypt( DEVICE_NAME ) );
-	imports::rtl_init_unicode_string( &DosDevices, skCrypt( DOS_NAME ) );
+	RtlInitUnicodeString( &Device, skCrypt( DEVICE_NAME ) );
+	RtlInitUnicodeString( &DosDevices, skCrypt( DOS_NAME ) );
 
-	PDEVICE_OBJECT DeviceObject = NULL;
-	NTSTATUS m_status = imports::io_create_device( driver_obj,
-		0,
-		&Device,
-		FILE_DEVICE_UNKNOWN,
-		FILE_DEVICE_SECURE_OPEN,
-		FALSE,
-		&DeviceObject 
-	);
-
-	DeviceObject->DeviceExtension = imports::ex_allocate_pool(NonPagedPool, sizeof(VARS));
-
-	if (NT_SUCCESS( m_status ))
-	{
-		SetFlag( driver_obj->Flags, DO_BUFFERED_IO );
-
-		driver_obj->MajorFunction[IRP_MJ_CREATE] = reinterpret_cast< PDRIVER_DISPATCH >( ioctl::io_close );
-		driver_obj->MajorFunction[IRP_MJ_CLOSE] = reinterpret_cast< PDRIVER_DISPATCH >( ioctl::io_close );
-		driver_obj->MajorFunction[IRP_MJ_DEVICE_CONTROL] = reinterpret_cast< PDRIVER_DISPATCH >( ioctl::io_dispatch );
-		driver_obj->DriverUnload = nullptr;
-
-		ClearFlag( DeviceObject->Flags, DO_DIRECT_IO );
-		ClearFlag( DeviceObject->Flags, DO_DEVICE_INITIALIZING );
-
-		m_status = imports::io_create_symbolic_link( &DosDevices, &Device );
-
-		if (!NT_SUCCESS( m_status ))
-			imports::io_delete_device( DeviceObject );
+	PDEVICE_OBJECT DeviceObject = { };
+	NTSTATUS Status = IoCreateDevice(driver_obj, 0, &Device, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE, &DeviceObject);
+	if (!NT_SUCCESS(Status)) {
+		printf("Failed to create device.\n");
+		printf("0x%llx.\n", Status);
+		return Status;
 	}
 
-	return m_status;
+	if (DeviceObject && !DeviceObject->DeviceExtension) {
+		DeviceObject->DeviceExtension = ExAllocatePool(NonPagedPool, sizeof(VARS));
+	}
+	else {
+		return STATUS_ALREADY_INITIALIZED;
+	}
+
+	Status = IoCreateSymbolicLink(&DosDevices, &Device);
+	if (!NT_SUCCESS(Status)) {
+		printf("Failed to create link.\n");
+		printf("0x%llx.\n", Status);
+		IoDeleteDevice(DeviceObject);
+		return Status;
+	}
+
+	SetFlag(driver_obj->Flags, DO_BUFFERED_IO);
+	
+	driver_obj->MajorFunction[IRP_MJ_CREATE] = ioctl::io_close;
+	driver_obj->MajorFunction[IRP_MJ_CLOSE] = ioctl::io_close;
+	driver_obj->MajorFunction[IRP_MJ_DEVICE_CONTROL] = ioctl::io_dispatch;
+
+	ClearFlag(DeviceObject->Flags, DO_DIRECT_IO);
+	ClearFlag(DeviceObject->Flags, DO_DEVICE_INITIALIZING);
+	
+	return Status;
 }
 
-__int64 DriverEntry( PVOID a1, PVOID a2 )
+__int64 DriverEntry(void* a1, void* a2)
 {
 	printf("Dispatched new driver.\n");
 
-	if (!NT_SUCCESS(imports::io_create_driver(NULL, reinterpret_cast<PDRIVER_INITIALIZE>(driver_entry))))
+	NTSTATUS Status = IoCreateDriver(NULL, driver_entry);
+
+	if (!NT_SUCCESS(Status))
 	{
+		printf("Failed to create driver.\n");
+		printf("0x%llx.\n", Status);
 		return STATUS_UNSUCCESSFUL;
 	}
 

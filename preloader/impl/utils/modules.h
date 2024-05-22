@@ -2,8 +2,8 @@ namespace crt
 {
     //int get_random_seed( )
     //{
-    //    ULONG seed = imports::ke_query_time_increment( );
-    //    return imports::rtl_random_ex( &seed );
+    //    ULONG seed = ke_query_time_increment( );
+    //    return rtl_random_ex( &seed );
     //}
 
     INT kmemcmp( const void* s1, const void* s2, size_t n )
@@ -88,8 +88,6 @@ namespace crt
 
         return dest;
     }
-
-
 }
 
 namespace modules
@@ -99,16 +97,16 @@ namespace modules
         unsigned long size = 32;
         char buffer[32]{};
 
-        imports::zw_query_system_information(information_class, buffer, size, &size);
+        ZwQuerySystemInformation(information_class, buffer, size, &size);
 
-        void* info = imports::ex_allocate_pool(NonPagedPool, size);
+        void* info = ExAllocatePool(NonPagedPool, size);
 
         if (!info)
             return nullptr;
 
-        if (!NT_SUCCESS(imports::zw_query_system_information(information_class, info, size, &size)))
+        if (!NT_SUCCESS(ZwQuerySystemInformation(information_class, info, size, &size)))
         {
-            imports::ex_free_pool_with_tag(info, 0);
+            ExFreePoolWithTag(info, 0);
             return nullptr;
         }
 
@@ -176,12 +174,12 @@ namespace modules
             {
                 const auto address = (std::uint64_t)mod.ImageBase;
                 const auto size = mod.ImageSize;
-                imports::ex_free_pool_with_tag(info, 0);
+                ExFreePoolWithTag(info, 0);
                 return { address, size };
             }
         }
 
-        imports::ex_free_pool_with_tag(info, 0);
+        ExFreePoolWithTag(info, 0);
         return kernel_module_data();
     }
 
@@ -189,7 +187,7 @@ namespace modules
     {
         SIZE_T bytes = 0;
 
-        if (imports::mm_copy_virtual_memory( imports::io_get_current_process( ), src, imports::io_get_current_process( ), dst, size, KernelMode, &bytes ) == STATUS_SUCCESS && bytes == size)
+        if (MmCopyVirtualMemory( IoGetCurrentProcess(), src, IoGetCurrentProcess(), dst, size, KernelMode, &bytes ) == STATUS_SUCCESS && bytes == size)
         {
             return true;
         }
@@ -200,9 +198,9 @@ namespace modules
     bool load_vurn_driver(PCWSTR driver_name)
     {
         UNICODE_STRING ServiceName{};
-        imports::rtl_init_unicode_string(&ServiceName, driver_name);
+        RtlInitUnicodeString(&ServiceName, driver_name);
 
-        const auto Status = imports::zw_load_driver(&ServiceName);
+        const auto Status = ZwLoadDriver(&ServiceName);
         if (Status == STATUS_SUCCESS || Status == STATUS_IMAGE_ALREADY_LOADED) {
             return true;
         }
@@ -216,41 +214,41 @@ namespace ctx
     {
         NTSTATUS Status = { STATUS_SUCCESS };
 
-        auto Mdl = imports::io_allocate_mdl(address, size, FALSE, FALSE, NULL);
+        auto Mdl = IoAllocateMdl(address, size, FALSE, FALSE, NULL);
 
-        imports::mm_probe_and_lock_pages(Mdl, KernelMode, IoReadAccess);
+        MmProbeAndLockPages(Mdl, KernelMode, IoReadAccess);
 
-        auto Mapping = imports::mm_map_locked_pages_specify_cache(Mdl, KernelMode, MmNonCached, NULL, FALSE, NormalPagePriority);
+        auto Mapping = MmMapLockedPagesSpecifyCache(Mdl, KernelMode, MmNonCached, NULL, FALSE, NormalPagePriority);
 
-        Status = imports::mm_protect_mdl_system_address(Mdl, PAGE_READWRITE);
+        Status = MmProtectMdlSystemAddress(Mdl, PAGE_READWRITE);
 
         if ( Status != STATUS_SUCCESS )
         {
             printf( "change page protection.\n" );
-            imports::mm_unmap_locked_pages(Mapping, Mdl);
-            imports::mm_unlock_pages(Mdl);
-            imports::io_free_mdl(Mdl);
+            MmUnmapLockedPages(Mapping, Mdl);
+            MmUnlockPages(Mdl);
+            IoFreeMdl(Mdl);
         }
 
         crt::kmemcpy( Mapping, buffer, size );
 
         if ( Restore )
         {
-            Status = imports::mm_protect_mdl_system_address(Mdl, PAGE_READONLY);
+            Status = MmProtectMdlSystemAddress(Mdl, PAGE_READONLY);
 
             if ( Status != STATUS_SUCCESS )
             {
                 printf( "restore page.\n" );
 
-                imports::mm_unmap_locked_pages( Mapping, Mdl );
-                imports::mm_unlock_pages( Mdl );
-                imports::io_free_mdl( Mdl );
+                MmUnmapLockedPages( Mapping, Mdl );
+                MmUnlockPages( Mdl );
+                IoFreeMdl( Mdl );
             }
         }
 
-        imports::mm_unmap_locked_pages( Mapping, Mdl );
-        imports::mm_unlock_pages( Mdl );
-        imports::io_free_mdl( Mdl );
+        MmUnmapLockedPages( Mapping, Mdl );
+        MmUnlockPages( Mdl );
+        IoFreeMdl( Mdl );
 
         return Status;
     }
@@ -259,45 +257,49 @@ namespace ctx
     {
         crt::kmemcpy(original_bytes, (void*)address, size);
 
-        uint8_t* Buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, size);
+        uint8_t* Buffer = (uint8_t*)ExAllocatePool(NonPagedPool, size);
         if (Buffer)
         {
             crt::kmemset(Buffer, 0x90, size);
             ctx::write_protected_address((void*)address, Buffer, size, true);
-            imports::ex_free_pool_with_tag(Buffer, 0);
+            ExFreePoolWithTag(Buffer, 0);
         }
     }
 
     void zero_address_range(std::uint64_t address, size_t size)
     {
-        uint8_t* Buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, size);
+        uint8_t* Buffer = (uint8_t*)ExAllocatePool(NonPagedPool, size);
         if (Buffer)
         {
             crt::kmemset(Buffer, 0xCC, size);
             ctx::write_protected_address((void*)address, Buffer, size, true);
-            imports::ex_free_pool_with_tag(Buffer, 0);
+            ExFreePoolWithTag(Buffer, 0);
         }
     }
 
     void generate_random_bytes(std::uint8_t* buffer, size_t size) 
     {
-        auto seed = imports::ke_query_time_increment();
+        auto seed = KeQueryTimeIncrement();
 
         for (auto i = 0; i < size; ++i) 
         {
-            auto random_number = imports::rtl_random_ex(&seed);
+            auto random_number = RtlRandomEx(&seed);
             buffer[i] = static_cast<std::uint8_t>(random_number & 0xFF);
         }
     }
 
     void randomize_address_range(std::uint64_t address, size_t size)
     {
-        uint8_t* Buffer = (uint8_t*)imports::ex_allocate_pool(NonPagedPool, size);
+        uint8_t* Buffer = (uint8_t*)ExAllocatePool(NonPagedPool, size);
         if (Buffer)
         {
             ctx::generate_random_bytes(Buffer, size);
             ctx::write_protected_address((void*)address, Buffer, size, true);
-            imports::ex_free_pool_with_tag(Buffer, 0);
+            ExFreePoolWithTag(Buffer, 0);
+        }
+        else
+        {
+            printf("Failed to allocate pool.\n");
         }
     }
 

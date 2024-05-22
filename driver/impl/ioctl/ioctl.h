@@ -58,7 +58,7 @@ namespace ioctl
 		}
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
-		imports::iof_complete_request(irp, IO_NO_INCREMENT);
+		IofCompleteRequest(irp, IO_NO_INCREMENT);
 
 		return STATUS_SUCCESS;
 	}
@@ -68,7 +68,7 @@ namespace ioctl
 		Irp->IoStatus.Status = STATUS_SUCCESS;
 		Irp->IoStatus.Information = 0;
 
-		imports::iof_complete_request(Irp, IO_NO_INCREMENT);
+		IofCompleteRequest(Irp, IO_NO_INCREMENT);
 		return STATUS_SUCCESS;
 	}
 
