@@ -117,6 +117,7 @@ NTSTATUS manual_mapped_entry(void* a1, void* a2)
 	ctx::nop_address_range(calldrv_address, 0x5, original_bytes);
 	printf("Patched IopLoadDriver.\n");
 
+	//sc create drv type=kernel binpath="C:\Users\Vasie\Desktop\RTKVHD64.sys"
 	if (!modules::load_vurn_driver(skCrypt(L"\\registry\\machine\\SYSTEM\\CurrentControlSet\\Services\\drv")))
 	{
 		printf("Couldnt load driver.\n");
@@ -130,7 +131,7 @@ NTSTATUS manual_mapped_entry(void* a1, void* a2)
 	ExFreePoolWithTag(original_bytes, 0);
 	printf("Restored original bytes.\n");
 
-	const auto vurn_driver = modules::get_kernel_module(skCrypt("rtwlanu.sys"));
+	const auto vurn_driver = modules::get_kernel_module(skCrypt("RTKVHD64.sys"));
 	if (!vurn_driver)
 	{
 		printf("Couldnt find vurnable driver.\n");

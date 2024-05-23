@@ -20,9 +20,49 @@
 #define DEVICE_NAME L"\\Device\\{37581902-15CD-4FCB-B17F-A7515AD33274}"
 #define DOS_NAME L"\\DosDevices\\{37581902-15CD-4FCB-B17F-A7515AD33274}"
 
+#define TARGET_DRIVER_PATH L"\\??\\C:\\Users\\Vasie\\Desktop\\RTKVHD64.sys"
+
+static NTSTATUS bypass_integrity_check()
+{
+	PCWSTR file_path = TARGET_DRIVER_PATH;
+
+	UNICODE_STRING unicode_file_path = { 0 };
+	OBJECT_ATTRIBUTES object_attributes = { 0 };
+	IO_STATUS_BLOCK io_status_block = { 0 };
+
+	HANDLE FileHandle = 0;
+
+	RtlInitUnicodeString(&unicode_file_path, TARGET_DRIVER_PATH);
+
+	InitializeObjectAttributes(&object_attributes,
+		&unicode_file_path,
+		OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+		NULL,
+		NULL
+	);
+
+	return ZwCreateFile(
+		&FileHandle,
+		GENERIC_READ,
+		&object_attributes,
+		&io_status_block,
+		NULL,
+		FILE_ATTRIBUTE_NORMAL,
+		0,
+		FILE_OPEN,
+		FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+		NULL,
+		0
+	);
+}
+
 static NTSTATUS driver_entry( PDRIVER_OBJECT driver_obj, PUNICODE_STRING registry_path )
 {
 	UNREFERENCED_PARAMETER( registry_path );
+
+	if (!NT_SUCCESS(bypass_integrity_check())) {
+		printf("Failed to bypass integrity checks\n");
+	}
 
 	printf("Setting up IOCTL...\n");
 

@@ -101,10 +101,10 @@ void PauseIfParentIsExplorer() {
 int wmain(const int argc, wchar_t** argv) {
 	SetUnhandledExceptionFilter(SimplestCrashHandler);
 
-	bool free = paramExists(argc, argv, L"free") > 0;
-	bool mdlMode = paramExists(argc, argv, L"mdl") > 0;
-	bool indPagesMode = paramExists(argc, argv, L"indPages") > 0;
-	bool passAllocationPtr = paramExists(argc, argv, L"PassAllocationPtr") > 0;
+	bool free = true;
+	bool mdlMode = false;
+	bool indPagesMode = true;
+	bool passAllocationPtr = false;
 
 	if (free) {
 		Log(L"[+] Free pool memory after usage enabled" << std::endl);

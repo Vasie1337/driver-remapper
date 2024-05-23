@@ -39,7 +39,7 @@ bool m_ue::interface_t::is_mapped( int proc ) {
 		return false;
 	}
 
-	return this->get_module_base( 0 );
+	return true;
 }
 
 bool m_ue::interface_t::resolve_dtb( ) {
