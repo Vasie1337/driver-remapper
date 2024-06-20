@@ -1,5 +1,4 @@
 #pragma once
-#include "../driver/impl/communication/structs.h"
 
 /* typedefs */
 

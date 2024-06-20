@@ -1,5 +1,7 @@
 #include "driver.h"
 
+#include "C:\Users\Vasie\Documents\GitHub\VOC\driver\impl\communication\structs.h"
+
 int m_ue::interface_t::get_process_id(std::string proc_name)
 {
 	PROCESSENTRY32 entry = { 0 };
@@ -24,7 +26,7 @@ int m_ue::interface_t::get_process_id(std::string proc_name)
 }
 
 bool m_ue::interface_t::start_service( ) {
-	this->m_handle = CreateFileA( _( "\\\\.\\{37581902-15CD-4FCB-B17F-A7515AD33274}" ), GENERIC_READ, 0, 0, 3, 0x00000080, 0 );
+	this->m_handle = CreateFileA( ( "\\\\.\\{37581902-15CD-4FCB-B17F-A7515AD33274}" ), GENERIC_READ, 0, 0, 3, 0x00000080, 0 );
 
 	if ( this->m_handle != INVALID_HANDLE_VALUE ) {
 		return true;
