@@ -5,6 +5,7 @@
 #include <TlHelp32.h>
 
 #include "interface.h"
+#include "../driver/impl/communication/structs.h"
 
 namespace m_ue
 {

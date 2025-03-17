@@ -1,7 +1,5 @@
 #include "driver.h"
 
-#include "C:\Users\Vasie\Documents\GitHub\VOC\driver\impl\communication\structs.h"
-
 int m_ue::interface_t::get_process_id(std::string proc_name)
 {
 	PROCESSENTRY32 entry = { 0 };
@@ -13,7 +11,7 @@ int m_ue::interface_t::get_process_id(std::string proc_name)
 	{
 		while (Process32Next(snapshot, &entry) == TRUE)
 		{
-			if (stricmp(entry.szExeFile, proc_name.c_str()) == 0)
+			if (_stricmp(entry.szExeFile, proc_name.c_str()) == 0)
 			{
 				CloseHandle(snapshot);
 				return entry.th32ProcessID;

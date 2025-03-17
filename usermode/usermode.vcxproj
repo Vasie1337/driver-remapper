@@ -43,7 +43,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -73,12 +73,16 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>$(ProjectName)</TargetName>
-    <OutDir>$(SolutionDir)bootstrap\</OutDir>
-    <IntDir>$(SolutionDir)bootstrap\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
     <IncludePath>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -110,11 +114,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\fortnite\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\usermode\</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -163,32 +168,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\backends\imgui_impl_win32.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_demo.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_draw.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_tables.cpp" />
-    <ClCompile Include="dependencies\Dear ImGui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\driver\driver.cpp" />
-    <ClCompile Include="overlay.cpp" />
     <ClCompile Include="source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_dx11.h" />
-    <ClInclude Include="dependencies\Dear ImGui\backends\imgui_impl_win32.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imconfig.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imgui.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imgui_internal.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imstb_rectpack.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imstb_textedit.h" />
-    <ClInclude Include="dependencies\Dear ImGui\imstb_truetype.h" />
     <ClInclude Include="dependencies\driver\driver.h" />
     <ClInclude Include="dependencies\driver\interface.h" />
     <ClInclude Include="dependencies\includes.hpp" />
-    <ClInclude Include="dependencies\math.h" />
-    <ClInclude Include="dependencies\xor.hpp" />
-    <ClInclude Include="overlay.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="dependencies\driver\asm\assert.asm">

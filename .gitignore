@@ -31,6 +31,5 @@
 *.out
 *.app
 
+# VS
 .vs
-bootstrap
-media

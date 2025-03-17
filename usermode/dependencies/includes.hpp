@@ -24,10 +24,4 @@
 
 #define m_log(fmt, ...) printf("[%s] " fmt, __FUNCTION__, ##__VA_ARGS__)
 
-#include <dependencies/xor.hpp>
 #include <dependencies/driver/driver.h>
-#include <dependencies/math.h>
-
-#include <overlay.h>
-
-
