@@ -67,10 +67,6 @@ device_t.m_base = device_t.get_module_base(0);
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Disclaimer
-
-This software is provided for educational and research purposes only. Usage of this software for attacking targets without prior mutual consent is illegal. The developers are not responsible for any misuse or damage caused by this program.
-
 ## Contributing
 
 Contributions are welcome. Please feel free to submit a Pull Request.
